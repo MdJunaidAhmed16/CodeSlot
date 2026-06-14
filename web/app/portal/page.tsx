@@ -90,6 +90,8 @@ export default function PortalPage() {
 
 function NewCampaign({ wallet, onDone }: { wallet: number; onDone: () => Promise<void> }) {
   const [form, setForm] = useState({ advertiser_name: "", text: "", url: "", description: "", budget_remaining: "50" });
+  const [useColor, setUseColor] = useState(false);
+  const [brandColor, setBrandColor] = useState("#3ecf8e");
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<{ ok: boolean; msg: string } | null>(null);
 
@@ -106,6 +108,7 @@ function NewCampaign({ wallet, onDone }: { wallet: number; onDone: () => Promise
         text: form.text,
         url: form.url,
         description: form.description || undefined,
+        brand_color: useColor ? brandColor : undefined,
         budget_remaining: Number(form.budget_remaining) || 0,
       });
       if (r.approved) {
@@ -134,6 +137,22 @@ function NewCampaign({ wallet, onDone }: { wallet: number; onDone: () => Promise
           <Field label="Ad text (max 120 chars)"><Input required maxLength={120} value={form.text} onChange={set("text")} placeholder="Acme CI — faster builds →" /></Field>
           <Field label="Destination URL (https)"><Input required type="url" value={form.url} onChange={set("url")} placeholder="https://acme.dev" /></Field>
           <Field label="Description (optional)"><Textarea value={form.description} onChange={set("description")} placeholder="One line shown in the tooltip." /></Field>
+
+          <div className="space-y-2">
+            <label className="flex items-center gap-2 text-sm font-medium">
+              <input type="checkbox" checked={useColor} onChange={(e) => setUseColor(e.target.checked)} />
+              Use a brand color
+            </label>
+            {useColor && (
+              <div className="flex items-center gap-3">
+                <input type="color" value={brandColor} onChange={(e) => setBrandColor(e.target.value)}
+                  className="h-9 w-12 cursor-pointer rounded border bg-transparent p-1" aria-label="Brand color" />
+                <Input value={brandColor} onChange={(e) => setBrandColor(e.target.value)} className="font-mono" />
+              </div>
+            )}
+            <AdPreview text={form.text || "Acme CI — faster builds →"} color={useColor ? brandColor : null} />
+          </div>
+
           <Field label="Budget (USD)">
             <Input type="number" min={0} value={form.budget_remaining} onChange={set("budget_remaining")} />
             <p className="text-xs text-muted-foreground">Drawn from your wallet (${wallet.toFixed(2)} available).</p>
@@ -158,6 +177,33 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     <div className="space-y-1.5">
       <Label>{label}</Label>
       {children}
+    </div>
+  );
+}
+
+/** Live preview of the status-bar slot in dark and light VS Code themes.
+ *  Fallback: no brand color → theme default (white-on-dark, black-on-light). */
+function AdPreview({ text, color }: { text: string; color: string | null }) {
+  const truncated = text.length > 48 ? text.slice(0, 47) + "…" : text;
+  return (
+    <div>
+      <div className="mb-1 text-xs text-muted-foreground">Preview (how it appears in the status bar)</div>
+      <div className="space-y-1.5">
+        <PreviewBar bg="#0d1117" defaultText="#ffffff" label="Dark theme" text={truncated} color={color} />
+        <PreviewBar bg="#f3f3f3" defaultText="#1f1f1f" label="Light theme" text={truncated} color={color} />
+      </div>
+    </div>
+  );
+}
+
+function PreviewBar({ bg, defaultText, label, text, color }: { bg: string; defaultText: string; label: string; text: string; color: string | null }) {
+  return (
+    <div className="flex items-center gap-2">
+      <span className="w-16 shrink-0 text-[10px] text-muted-foreground">{label}</span>
+      <div className="flex flex-1 items-center justify-end gap-3 rounded px-3 py-1.5 font-mono text-xs" style={{ background: bg }}>
+        <span style={{ color: color ?? defaultText }}>📣 {text}</span>
+        <span style={{ color: "#3fb950" }}>$0.04 cr</span>
+      </div>
     </div>
   );
 }
