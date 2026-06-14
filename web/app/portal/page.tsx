@@ -309,15 +309,15 @@ function AddFundsDialog({ onClose, onDone }: { onClose: () => void; onDone: () =
         <CardHeader>
           <CardTitle>Add funds</CardTitle>
           <CardDescription>
-            {currency === "inr" ? "Paid via Razorpay (INR)" : "Paid via Stripe (USD)"} · credited to your USD wallet
+            Secure checkout (Stripe / Razorpay) · credited to your USD wallet
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex gap-2">
             <Button type="button" variant={currency === "usd" ? "default" : "outline"} size="sm" className="flex-1"
-              onClick={() => { setCurrency("usd"); setAmount("50"); }}>$ USD · Stripe</Button>
+              onClick={() => { setCurrency("usd"); setAmount("50"); }}>$ USD</Button>
             <Button type="button" variant={currency === "inr" ? "default" : "outline"} size="sm" className="flex-1"
-              onClick={() => { setCurrency("inr"); setAmount("4150"); }}>₹ INR · Razorpay</Button>
+              onClick={() => { setCurrency("inr"); setAmount("4150"); }}>₹ INR</Button>
           </div>
           <div className="space-y-1.5">
             <Label>Amount ({sym})</Label>

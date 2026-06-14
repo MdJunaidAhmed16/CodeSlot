@@ -43,7 +43,12 @@ Deno.serve(async (req) => {
   if (amountUsd < MIN_USD) return error(`minimum top-up is $${MIN_USD}`, 400);
   if (amountUsd > MAX_USD) return error("amount too large", 400);
 
-  const provider = providerForCurrency(currency);
+  // Route to a processor. USD prefers Stripe, but falls back to Razorpay
+  // (International Payments) when Stripe isn't configured — e.g. Indian
+  // accounts where Stripe is invite-only. INR always uses Razorpay.
+  const stripeAvailable = Boolean(Deno.env.get("STRIPE_SECRET_KEY"));
+  const provider =
+    currency === "usd" && stripeAvailable ? "stripe" : "razorpay";
   const amountMinor = toMinor(amount);
   const siteUrl = (Deno.env.get("CODESLOT_SITE_URL") ?? "http://localhost:3000").replace(/\/+$/, "");
 
@@ -72,7 +77,8 @@ Deno.serve(async (req) => {
       return json({ provider: "stripe", checkout_url: session.url, amount_usd: amountUsd });
     }
 
-    // Razorpay (INR)
+    // Razorpay — handles INR, and USD/foreign cards when International
+    // Payments is enabled on the account.
     const keyId = Deno.env.get("RAZORPAY_KEY_ID");
     const keySecret = Deno.env.get("RAZORPAY_KEY_SECRET");
     if (!keyId || !keySecret) return error("payments unavailable", 503);
@@ -84,7 +90,7 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         amount: amountMinor,
-        currency: "INR",
+        currency: currency.toUpperCase(), // 'INR' or 'USD'
         notes: { advertiser_id: advertiserId },
       }),
     });
@@ -96,6 +102,7 @@ Deno.serve(async (req) => {
       provider: "razorpay",
       order_id: order.id,
       key_id: keyId,
+      display_currency: currency.toUpperCase(),
       amount_minor: amountMinor,
       currency: "INR",
       amount_usd: amountUsd,

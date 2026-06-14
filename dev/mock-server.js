@@ -346,7 +346,9 @@ const server = http.createServer(async (req, res) => {
         : (String(b.country || "").toUpperCase() === "IN" ? "inr" : "usd");
       const amountUsd = Math.round((currency === "inr" ? amount / USD_INR_RATE : amount) * 100) / 100;
       if (amountUsd < 5) return send(res, 400, { error: "minimum top-up is $5" });
-      const provider = currency === "inr" ? "razorpay" : "stripe";
+      // USD prefers Stripe, but falls back to Razorpay (International) when
+      // Stripe isn't configured. INR always Razorpay.
+      const provider = currency === "usd" && process.env.STRIPE_SECRET_KEY ? "stripe" : "razorpay";
       advWallet.set(sess.advertiserId, walletOf(sess.advertiserId) + amountUsd);
       const pay = { provider, currency, amount_minor: Math.round(amount * 100), amount_usd: amountUsd, status: "paid", created_at: new Date().toISOString() };
       if (!advPayments.has(sess.advertiserId)) advPayments.set(sess.advertiserId, []);
