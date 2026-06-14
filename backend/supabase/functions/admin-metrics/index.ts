@@ -58,6 +58,34 @@ Deno.serve(async (req) => {
   const totalCampaigns = (metrics ?? []).length;
   const activeCampaigns = (metrics ?? []).filter((m) => m.active).length;
 
+  // ── Treasury (real cash positions) ──────────────────────────────
+  // Cash collected from advertisers (held in your Stripe/Razorpay balance).
+  const { data: paidRows } = await db
+    .from("payments").select("amount_usd").eq("status", "paid");
+  const collected = sumUsd(paidRows, "amount_usd");
+
+  // Cash spent on OpenRouter (key provisioning at redemption).
+  const { data: orRows } = await db
+    .from("redemptions").select("openrouter_amount").eq("status", "completed");
+  const openrouterSpent = sumUsd(orRows, "openrouter_amount");
+
+  // Money still owed to advertisers: unspent wallet + undelivered campaign
+  // budget — but ONLY for advertiser-funded campaigns (house/owner ads with
+  // advertiser_id = null carry no real liability).
+  const { data: walletRows } = await db.from("advertisers").select("wallet_usd");
+  const { data: budgetRows } = await db
+    .from("ads").select("budget_remaining")
+    .not("advertiser_id", "is", null)
+    .neq("status", "rejected");
+  const advertiserFloat =
+    sumUsd(walletRows, "wallet_usd") + sumUsd(budgetRows, "budget_remaining");
+
+  // Future OpenRouter cost owed to developers (earned but not yet redeemed).
+  const devLiability = creditsToUsd(creditsEarned - creditsRedeemed);
+
+  const netCash = round2(collected - openrouterSpent);
+  const distributable = round2(collected - openrouterSpent - advertiserFloat - devLiability);
+
   // Kill-switch state.
   const { data: flag } = await db
     .from("feature_flags")
@@ -85,6 +113,14 @@ Deno.serve(async (req) => {
       total_campaigns: totalCampaigns,
       active_campaigns: activeCampaigns,
     },
+    treasury: {
+      collected_usd: round2(collected),          // cash in (Stripe/Razorpay balance)
+      openrouter_spent_usd: round2(openrouterSpent), // cash out (OpenRouter)
+      net_cash_usd: netCash,                       // in − out
+      advertiser_float_usd: round2(advertiserFloat), // owed to advertisers (unspent)
+      dev_liability_usd: round2(devLiability),     // future OpenRouter cost (unredeemed credits)
+      distributable_usd: distributable,            // safe-to-withdraw profit
+    },
     ad_serving_enabled: flag ? flag.value !== false : true,
     flagged_campaigns: (metrics ?? []).filter((m) => m.review_flag).length,
     campaigns: (metrics ?? []).map((m) => ({
@@ -104,4 +140,9 @@ Deno.serve(async (req) => {
 
 function round2(n: number): number {
   return Math.round(n * 100) / 100;
+}
+
+// deno-lint-ignore no-explicit-any
+function sumUsd(rows: any[] | null, field: string): number {
+  return (rows ?? []).reduce((s, r) => s + (Number(r[field]) || 0), 0);
 }

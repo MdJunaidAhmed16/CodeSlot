@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { getMetrics, patchAd, setFlag, ApiError } from "../api";
-import type { Metrics } from "../types";
+import type { Metrics, Treasury } from "../types";
 import { NewCampaignDialog } from "./NewCampaignDialog";
 import { Button } from "./ui/button";
 import { Card, CardContent } from "./ui/card";
@@ -8,6 +8,7 @@ import { Badge } from "./ui/badge";
 import { cn } from "../lib/utils";
 import {
   SquareDot, LayoutDashboard, BarChart3, Megaphone, LogOut, Power, Plus, RefreshCw, AlertTriangle,
+  Landmark, ArrowDownToLine, ArrowUpFromLine, Banknote,
 } from "lucide-react";
 
 const money = (n: number) =>
@@ -154,6 +155,7 @@ export function Dashboard({
                 </tbody>
               </table>
             </Panel>
+            {metrics.treasury && <TreasuryPanel tr={metrics.treasury} onRefresh={() => void load()} />}
           </div>
         )}
 
@@ -240,6 +242,52 @@ function Stat({ label, value, sub, accent }: { label: string; value: string; sub
         {sub && <div className="mt-1 text-xs text-muted-foreground">{sub}</div>}
       </CardContent>
     </Card>
+  );
+}
+
+function TreasuryPanel({ tr, onRefresh }: { tr: Treasury; onRefresh: () => void }) {
+  const money = (n: number) => "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return (
+    <Card>
+      <div className="flex items-center justify-between border-b px-6 py-4">
+        <h2 className="flex items-center gap-2 font-semibold"><Landmark className="h-4 w-4" /> Treasury</h2>
+        <Button variant="ghost" size="sm" onClick={onRefresh}><RefreshCw className="h-4 w-4" /> Refresh</Button>
+      </div>
+      <CardContent className="space-y-5 pt-5">
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
+          <TStat icon={<ArrowDownToLine className="h-4 w-4 text-emerald-500" />} label="Collected" value={money(tr.collected_usd)} sub="in Stripe / Razorpay" />
+          <TStat icon={<ArrowUpFromLine className="h-4 w-4 text-amber-500" />} label="OpenRouter spent" value={money(tr.openrouter_spent_usd)} sub="cost of redemptions" />
+          <TStat icon={<Banknote className="h-4 w-4 text-foreground" />} label="Net cash" value={money(tr.net_cash_usd)} sub="collected − spent" />
+        </div>
+        <table className="w-full text-sm">
+          <tbody>
+            <Row k="Cash collected (advertiser payments)" v={money(tr.collected_usd)} />
+            <Row k="Spent on OpenRouter (redemptions)" v={"−" + money(tr.openrouter_spent_usd)} />
+            <Row k="Owed to advertisers (unspent wallet + budgets)" v={"−" + money(tr.advertiser_float_usd)} />
+            <Row k="Developer credit liability (future OpenRouter cost)" v={"−" + money(tr.dev_liability_usd)} />
+            <Row k="Distributable profit" v={money(tr.distributable_usd)} strong />
+          </tbody>
+        </table>
+        <div className="rounded-md border bg-muted/40 p-4 text-xs text-muted-foreground">
+          <p className="mb-1 font-semibold text-foreground">How to withdraw your profit</p>
+          The collected cash sits in your <b>Stripe</b> (USD) and <b>Razorpay</b> (INR) balances.
+          Add your bank account once in each provider&apos;s dashboard; they pay out automatically on a
+          schedule (or trigger a manual payout). Keep at least the <b>owed-to-advertisers</b> and
+          <b> developer-liability</b> amounts in reserve — the <b>distributable profit</b> above is what&apos;s
+          safe to take out. Top up your OpenRouter balance to cover redemptions.
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function TStat({ icon, label, value, sub }: { icon: React.ReactNode; label: string; value: string; sub: string }) {
+  return (
+    <div className="rounded-lg border p-4">
+      <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">{icon} {label}</div>
+      <div className="mt-1 text-xl font-bold">{value}</div>
+      <div className="text-xs text-muted-foreground">{sub}</div>
+    </div>
   );
 }
 

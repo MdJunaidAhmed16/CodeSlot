@@ -46,6 +46,7 @@ const advWallet = new Map();
 const advPayments = new Map();
 const USD_INR_RATE = 83;
 const walletOf = (id) => advWallet.get(id) || 0;
+let mockOpenRouterSpent = 0; // running total of $ spent minting OpenRouter keys
 
 function userOf(id) {
   if (!users.has(id)) users.set(id, { login: "dev", is_owner: DEV_OWNER, is_admin: true, ledger: [], seenIdem: new Set() });
@@ -259,6 +260,7 @@ const server = http.createServer(async (req, res) => {
       if (amount < MIN_REDEEM_CREDITS) return send(res, 400, { error: `minimum redemption is ${MIN_REDEEM_CREDITS} credits (~$5)` });
       if (amount > balanceOf(s.uid)) return send(res, 402, { error: "insufficient balance" });
       const orAmount = Math.round(amount * CREDIT_USD * 0.95 * 100) / 100;
+      mockOpenRouterSpent += orAmount;
       userOf(s.uid).ledger.push({ amount: -amount, reason: "redemption", advertiser: "redeem", event_type: "redemption", at: new Date().toISOString() });
       const fakeKey = "sk-or-v1-" + crypto.randomBytes(24).toString("hex");
       const keyName = `CodeSlot · ${b.model} · ${new Date().toISOString().slice(0, 10)}`;
@@ -441,7 +443,24 @@ function adminMetrics() {
   }
   const usd = (c) => Math.round(c * CREDIT_USD * 100) / 100;
   const payout = usd(creditsEarned);
+  const r2 = (n) => Math.round(n * 100) / 100;
+  // Treasury (real cash positions).
+  let collected = 0;
+  for (const [, list] of advPayments) for (const p of list) if (p.status === "paid") collected += p.amount_usd;
+  let walletFloat = 0; for (const [, w] of advWallet) walletFloat += w;
+  const budgetFloat = ADS.filter((a) => a.advertiser_id && a.status !== "rejected").reduce((s, a) => s + a.budget_remaining, 0);
+  const advertiserFloat = walletFloat + budgetFloat;
+  const devLiability = usd(creditsEarned - creditsRedeemed);
+  const treasury = {
+    collected_usd: r2(collected),
+    openrouter_spent_usd: r2(mockOpenRouterSpent),
+    net_cash_usd: r2(collected - mockOpenRouterSpent),
+    advertiser_float_usd: r2(advertiserFloat),
+    dev_liability_usd: r2(devLiability),
+    distributable_usd: r2(collected - mockOpenRouterSpent - advertiserFloat - devLiability),
+  };
   return {
+    treasury,
     totals: {
       spend, impressions, clicks,
       ctr: impressions ? Math.round((clicks / impressions) * 10000) / 100 : 0,

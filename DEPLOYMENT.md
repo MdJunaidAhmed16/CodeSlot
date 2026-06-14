@@ -202,6 +202,19 @@ a 5-minute timestamp window against replay). Crediting is atomic + idempotent
 > top-ups (no real Stripe/Razorpay), so the portal's Add Funds → balance →
 > fund-a-campaign flow works offline.
 
+### Where the money lives & how you get paid
+
+You do **not** link a bank account anywhere in this codebase. Advertiser cash
+lands in **your Stripe and Razorpay balances** — those *are* the platform wallet.
+Link your bank **once in each provider's dashboard**; they pay out to it
+automatically (or on a manual trigger). OpenRouter is your **cost**: minting keys
+at redemption draws down your OpenRouter balance (top it up from your card/bank).
+
+The owner dashboard's **Treasury** panel shows the live position:
+`collected − OpenRouter spent − owed-to-advertisers − developer-liability =
+distributable profit`. Keep the liabilities in reserve; the distributable figure
+is what's safe to withdraw.
+
 ---
 
 ## 6. Point the extension at production & publish

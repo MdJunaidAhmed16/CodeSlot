@@ -36,8 +36,18 @@ export interface Campaign {
   budget_remaining: number;
 }
 
+export interface Treasury {
+  collected_usd: number;
+  openrouter_spent_usd: number;
+  net_cash_usd: number;
+  advertiser_float_usd: number;
+  dev_liability_usd: number;
+  distributable_usd: number;
+}
+
 export interface Metrics {
   totals: Totals;
+  treasury?: Treasury;
   ad_serving_enabled: boolean;
   flagged_campaigns?: number;
   campaigns: Campaign[];
