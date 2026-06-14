@@ -8,7 +8,8 @@ export const metadata = { title: "Contact Us — CodeSlot" };
 // before submitting to Razorpay (they verify a real contact + address).
 const SUPPORT_EMAIL = "mohammedjunaidah@gmail.com";
 const BUSINESS_NAME = "CodeSlot";
-const ADDRESS = "India"; // ← add your full registered address
+const PHONE_NUMBER = "+919866581615"; // ← add your support phone number with country code
+const ADDRESS = "302, S-2, Siva Towers, Tadepalle bypass, Vijayawada"; // ← add your full registered address
 const HOURS = "Mon–Fri, 10:00–18:00 IST";
 
 export default function ContactPage() {
