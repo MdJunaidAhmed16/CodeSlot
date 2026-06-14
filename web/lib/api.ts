@@ -150,3 +150,20 @@ export const createPayment = (amount: number, currency: Currency) =>
     method: "POST",
     body: JSON.stringify({ amount, currency, country: currency === "inr" ? "IN" : "US" }),
   });
+
+export interface Account {
+  email: string | null;
+  name: string | null;
+  provider: string | null;
+  wallet_usd: number;
+  campaigns: number;
+  created_at: string | null;
+}
+
+export const getAccount = () => call<Account>("advertiser-account");
+
+export const deleteAccount = () =>
+  call<{ success: boolean }>("advertiser-account", {
+    method: "POST",
+    body: JSON.stringify({ action: "delete" }),
+  });

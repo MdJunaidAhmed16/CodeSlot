@@ -16,6 +16,7 @@ import {
 import { getSupabase, supabaseConfigured } from "@/lib/supabase";
 import { openRazorpay } from "@/lib/razorpay";
 import { uploadLogo } from "@/lib/storage";
+import { ProfileMenu } from "@/components/profile-menu";
 import { CheckCircle2, XCircle, ExternalLink, Plus, LogOut, Wallet, Upload, ImageIcon } from "lucide-react";
 
 export default function PortalPage() {
@@ -23,6 +24,7 @@ export default function PortalPage() {
   const [ready, setReady] = useState(false);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [wallet, setWallet] = useState(0);
+  const [email, setEmail] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -30,6 +32,7 @@ export default function PortalPage() {
       const data = await listCampaigns();
       setCampaigns(data.campaigns);
       setWallet(data.wallet_usd);
+      setEmail(data.email);
       setError(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load campaigns");
@@ -64,7 +67,10 @@ export default function PortalPage() {
             <h1 className="text-3xl font-bold">Your campaigns</h1>
             <p className="text-sm text-muted-foreground">{devEmail() ?? "Signed in"} · auto-approved after a safety review</p>
           </div>
-          <Button variant="ghost" size="sm" onClick={() => void signOut()}><LogOut className="h-4 w-4" /> Sign out</Button>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" onClick={() => void signOut()}><LogOut className="h-4 w-4" /> Sign out</Button>
+            <ProfileMenu email={email} />
+          </div>
         </div>
 
         <div className="grid gap-8 lg:grid-cols-[380px_1fr]">

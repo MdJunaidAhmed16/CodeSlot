@@ -8,7 +8,9 @@ import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
 
 export interface AdvertiserContext {
   advertiserId: string;
+  authUserId: string;
   email?: string;
+  provider?: string;
   db: SupabaseClient;
 }
 
@@ -53,5 +55,5 @@ export async function requireAdvertiser(
   if (upErr || !adv) return error("could not load advertiser", 500);
   if (adv.banned) return error("account suspended", 403);
 
-  return { advertiserId: adv.id, email: user.email, db };
+  return { advertiserId: adv.id, authUserId: user.id, email: user.email, provider, db };
 }

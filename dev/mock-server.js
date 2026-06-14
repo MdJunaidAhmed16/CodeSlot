@@ -333,6 +333,33 @@ const server = http.createServer(async (req, res) => {
         return send(res, 200, { campaign: advCampaignView(ad), approved: verdict.ok, reason: verdict.ok ? null : verdict.reason });
       }
     }
+    // /advertiser-account — profile + delete (dev auth)
+    if (path === "advertiser-account") {
+      const h = req.headers["authorization"] || "";
+      const tok = (h.match(/^Bearer\s+(.+)$/i) || [])[1];
+      const sess = tok && advSessions.get(tok);
+      if (!sess) return send(res, 401, { error: "authentication required" });
+      if (req.method === "GET") {
+        return send(res, 200, {
+          email: sess.email, name: sess.email.split("@")[0], provider: "email",
+          wallet_usd: walletOf(sess.advertiserId),
+          campaigns: ADS.filter((a) => a.advertiser_id === sess.advertiserId).length,
+          created_at: new Date().toISOString(),
+        });
+      }
+      if (req.method === "POST") {
+        const b = await readBody(req);
+        if (b.action !== "delete") return send(res, 400, { error: "unknown action" });
+        // Remove the advertiser's campaigns, wallet, payments, session.
+        for (let i = ADS.length - 1; i >= 0; i--) if (ADS[i].advertiser_id === sess.advertiserId) ADS.splice(i, 1);
+        advWallet.delete(sess.advertiserId);
+        advPayments.delete(sess.advertiserId);
+        advByEmail.delete(sess.email);
+        advSessions.delete(tok);
+        log(`advertiser account deleted: ${sess.email}`);
+        return send(res, 200, { success: true });
+      }
+    }
     // POST /payment-create — mock instantly credits the wallet (no real Stripe/Razorpay locally).
     if (path === "payment-create" && req.method === "POST") {
       const h = req.headers["authorization"] || "";

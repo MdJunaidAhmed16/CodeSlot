@@ -29,6 +29,9 @@ verify_jwt = false
 [functions.advertiser-campaigns]
 verify_jwt = false
 
+[functions.advertiser-account]
+verify_jwt = false
+
 [functions.payment-create]
 verify_jwt = false
 
