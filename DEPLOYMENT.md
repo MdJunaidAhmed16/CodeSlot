@@ -49,7 +49,9 @@ supabase secrets set \
   OPENROUTER_PROVISIONING_KEY="sk-or-prov-..." \
   UPSTASH_REDIS_REST_URL="https://...upstash.io" \
   UPSTASH_REDIS_REST_TOKEN="..."
-# SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are injected automatically.
+# SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are injected automatically by
+# Supabase. (New-API-key projects may instead set SUPABASE_SECRET_KEY=sb_secret_…;
+# the functions accept either. The client apps use the PUBLISHABLE key, never this.)
 ```
 
 | Secret | Purpose | Notes |
