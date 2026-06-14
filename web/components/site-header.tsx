@@ -27,7 +27,7 @@ export function SiteHeader() {
 
         <div className="flex items-center gap-2">
           <Button asChild variant="ghost" size="sm">
-            <a href="https://marketplace.visualstudio.com/" target="_blank" rel="noreferrer">User Login</a>
+            <Link href="/user">User Login</Link>
           </Button>
           <Button asChild size="sm">
             <Link href="/login">Advertisers Portal</Link>
