@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+out/
+build/
+.next/
+*.vsix
+
+# TypeScript / tooling
+*.tsbuildinfo
+next-env.d.ts
+.vscode-test/
+.eslintcache
+
+# Env & secrets (keep .env.example committed)
+.env
+.env.local
+.env.*.local
+*.env
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db

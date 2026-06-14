@@ -1,0 +1,114 @@
+{
+  "name": "codeslot",
+  "displayName": "CodeSlot",
+  "description": "Earn AI usage credits for a single, unobtrusive sponsored slot in your status bar. CodeSlot never reads your code.",
+  "version": "0.1.0",
+  "publisher": "junaidbuilds",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "ads",
+    "credits",
+    "ai",
+    "openrouter",
+    "rewards"
+  ],
+  "icon": "media/icon.png",
+  "galleryBanner": {
+    "color": "#0d1117",
+    "theme": "dark"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/junaidbuilds/codeslot"
+  },
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "codeslot.signIn",
+        "title": "CodeSlot: Sign in with GitHub",
+        "category": "CodeSlot"
+      },
+      {
+        "command": "codeslot.signOut",
+        "title": "CodeSlot: Sign out",
+        "category": "CodeSlot"
+      },
+      {
+        "command": "codeslot.openWallet",
+        "title": "CodeSlot: Open Wallet",
+        "category": "CodeSlot"
+      },
+      {
+        "command": "codeslot.redeemCredits",
+        "title": "CodeSlot: Redeem Credits",
+        "category": "CodeSlot"
+      },
+      {
+        "command": "codeslot.showBalance",
+        "title": "CodeSlot: Show Balance",
+        "category": "CodeSlot"
+      },
+      {
+        "command": "codeslot.togglePause",
+        "title": "CodeSlot: Pause / Resume Ads",
+        "category": "CodeSlot"
+      },
+      {
+        "command": "codeslot.openCurrentAd",
+        "title": "CodeSlot: Open Current Ad",
+        "category": "CodeSlot"
+      },
+      {
+        "command": "codeslot.deleteMyData",
+        "title": "CodeSlot: Delete My Data",
+        "category": "CodeSlot"
+      }
+    ],
+    "configuration": {
+      "title": "CodeSlot",
+      "properties": {
+        "codeslot.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show sponsored slot and accrue credits. When off, no ads are shown and no credits are earned."
+        },
+        "codeslot.apiBaseUrl": {
+          "type": "string",
+          "default": "",
+          "description": "Advanced: override the CodeSlot backend base URL. Must be https, except http://localhost is allowed for the local mock server. Leave blank to use the default.",
+          "pattern": "^(https://.*|http://(localhost|127\\.0\\.0\\.1)(:[0-9]+)?(/.*)?)?$",
+          "patternErrorMessage": "The CodeSlot backend URL must use https:// (or http://localhost for local testing)"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run package",
+    "compile": "node esbuild.js",
+    "watch": "node esbuild.js --watch",
+    "package": "npm run check-types && npm run lint && node esbuild.js --production",
+    "mock": "node dev/mock-server.js",
+    "check-types": "tsc --noEmit",
+    "lint": "eslint src --ext ts",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/node": "20.x",
+    "@types/vscode": "^1.85.0",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "esbuild": "^0.28.1",
+    "eslint": "^8.57.0",
+    "typescript": "^5.4.0"
+  }
+}

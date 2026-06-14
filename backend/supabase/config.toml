@@ -1,0 +1,50 @@
+# Supabase Edge Function config for CodeSlot.
+#
+# These endpoints authenticate by anonymous device UUID, not Supabase Auth, so
+# the platform JWT gate is disabled. Authorization/validation is enforced inside
+# each function (UUID checks, rate limits, server-side balance recomputation).
+
+project_id = "codeslot"
+
+# Auth: exchanges a GitHub token for a CodeSlot session token.
+[functions.auth]
+verify_jwt = false
+
+[functions.serve-ad]
+verify_jwt = false
+
+[functions.track-event]
+verify_jwt = false
+
+[functions.balance]
+verify_jwt = false
+
+[functions.redeem-credits]
+verify_jwt = false
+
+[functions.delete-data]
+verify_jwt = false
+
+# Advertiser portal — gated in-code by Supabase Auth session token.
+[functions.advertiser-campaigns]
+verify_jwt = false
+
+[functions.payment-create]
+verify_jwt = false
+
+# Payment webhooks — public endpoints, verified by provider signatures in-code.
+[functions.payment-webhook-stripe]
+verify_jwt = false
+
+[functions.payment-webhook-razorpay]
+verify_jwt = false
+
+# Admin endpoints — gated in-code by CodeSlot session token + is_admin check.
+[functions.admin-ads]
+verify_jwt = false
+
+[functions.admin-metrics]
+verify_jwt = false
+
+[functions.admin-flags]
+verify_jwt = false

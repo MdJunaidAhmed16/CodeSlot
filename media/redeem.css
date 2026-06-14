@@ -1,0 +1,84 @@
+:root { --gold: #f5c518; --green: #3fb950; }
+* { box-sizing: border-box; }
+body {
+  margin: 0; padding: 24px;
+  font-family: var(--vscode-font-family);
+  color: var(--vscode-foreground);
+  background: var(--vscode-editor-background);
+  display: flex; justify-content: center;
+}
+.modal {
+  width: 100%; max-width: 560px;
+  border: 1px solid var(--vscode-panel-border);
+  border-top: 3px solid var(--gold);
+  border-radius: 12px;
+  padding: 20px;
+  background: var(--vscode-editorWidget-background);
+}
+.modal-head h1 { font-size: 18px; margin: 0; }
+.arrow { color: var(--gold); }
+.subtitle { color: var(--vscode-descriptionForeground); font-size: 13px; margin: 4px 0 16px; }
+.subtitle b { color: var(--gold); }
+
+.model-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.model {
+  text-align: left; cursor: pointer;
+  border: 1px solid var(--vscode-panel-border);
+  background: var(--vscode-editor-background);
+  border-radius: 8px; padding: 12px; color: inherit;
+  font-family: inherit; position: relative;
+}
+.model:hover { border-color: var(--gold); }
+.model.selected { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold) inset; }
+.model .name { font-weight: 600; font-size: 14px; }
+.model .vendor { color: var(--vscode-descriptionForeground); font-size: 12px; font-family: var(--vscode-editor-font-family); }
+.model .free { position: absolute; top: 10px; right: 10px; font-size: 9px; color: var(--green); border: 1px solid var(--green); border-radius: 4px; padding: 1px 5px; }
+.model .check { position: absolute; top: 10px; right: 10px; color: var(--gold); display: none; }
+.model.selected .check { display: block; }
+
+.back { background: none; border: none; color: var(--vscode-descriptionForeground); cursor: pointer; font-size: 13px; padding: 0 0 12px; }
+
+.amount-display { font-size: 44px; font-weight: 700; text-align: center; margin: 8px 0; }
+.quick { display: flex; gap: 8px; justify-content: center; margin-bottom: 16px; }
+.chip { border: 1px solid var(--vscode-panel-border); background: var(--vscode-editor-background); color: inherit; border-radius: 6px; padding: 6px 14px; cursor: pointer; font-family: inherit; }
+.chip.active, .chip:hover { border-color: var(--gold); color: var(--gold); }
+
+.breakdown { width: 100%; border-collapse: collapse; font-size: 13px; }
+.breakdown td { padding: 8px 0; border-bottom: 1px solid var(--vscode-panel-border); }
+.breakdown td:last-child { text-align: right; font-family: var(--vscode-editor-font-family); }
+.breakdown tr.strong td { font-weight: 700; }
+.breakdown tr.strong td:last-child { color: var(--gold); }
+
+.confirm { text-align: center; }
+.confirm-icon { width: 44px; height: 44px; line-height: 44px; margin: 0 auto 16px; border: 2px solid var(--gold); color: var(--gold); border-radius: 10px; font-size: 22px; }
+.warn { color: var(--vscode-descriptionForeground); font-size: 12px; text-align: left; margin-top: 14px; }
+
+.modal-foot { margin-top: 18px; }
+.btn { width: 100%; border: none; border-radius: 8px; padding: 12px; font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit; }
+.btn-primary { background: var(--gold); color: #1a1a1a; }
+.btn:disabled { opacity: 0.5; cursor: default; }
+.btn:focus-visible { outline: 2px solid var(--vscode-focusBorder); outline-offset: 2px; }
+
+.keybox { animation: fade 0.15s ease; }
+.key-title { font-size: 15px; font-weight: 700; color: var(--green); margin-bottom: 4px; }
+.key-sub { color: var(--vscode-descriptionForeground); font-size: 12px; margin: 0 0 12px; }
+.key-row { display: flex; gap: 8px; align-items: center; }
+.key-field {
+  flex: 1; font-family: var(--vscode-editor-font-family); font-size: 13px;
+  padding: 10px; border-radius: 6px;
+  border: 1px solid var(--vscode-input-border, var(--vscode-panel-border));
+  background: var(--vscode-input-background); color: var(--vscode-input-foreground);
+}
+.key-btn {
+  border: 1px solid var(--vscode-panel-border); background: var(--vscode-editor-background);
+  color: inherit; border-radius: 6px; padding: 9px 12px; cursor: pointer; font-size: 14px;
+}
+.key-btn:hover { border-color: var(--gold); }
+.key-warn { color: var(--vscode-descriptionForeground); font-size: 12px; margin-top: 12px; }
+
+.status { text-align: center; font-size: 13px; margin-top: 12px; }
+.status.ok { color: var(--green); }
+.status.err { color: var(--vscode-errorForeground); }
+.secure { text-align: center; color: var(--vscode-descriptionForeground); font-size: 11px; margin-top: 12px; }
+.step { animation: fade 0.15s ease; }
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
