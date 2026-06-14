@@ -16,11 +16,13 @@ import { Github, Mail } from "lucide-react";
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
   useEffect(() => {
-    // Already signed in (e.g. returning from OAuth) → go to the portal.
     void isSignedIn().then((yes) => yes && router.replace("/portal"));
   }, [router]);
 
@@ -31,6 +33,32 @@ export default function LoginPage() {
       provider,
       options: { redirectTo: `${window.location.origin}/portal`, scopes: provider === "github" ? "read:user user:email" : undefined },
     });
+  }
+
+  async function emailAuth() {
+    const sb = getSupabase();
+    if (!sb) return;
+    setBusy(true);
+    setErr(null);
+    setNotice(null);
+    try {
+      if (mode === "signup") {
+        const { error } = await sb.auth.signUp({ email: email.trim(), password });
+        if (error) throw error;
+        // If email confirmation is on, there's no session yet.
+        const { data } = await sb.auth.getSession();
+        if (data.session) router.push("/portal");
+        else setNotice("Account created. Check your email to confirm, then sign in.");
+      } else {
+        const { error } = await sb.auth.signInWithPassword({ email: email.trim(), password });
+        if (error) throw error;
+        router.push("/portal");
+      }
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Authentication failed");
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function dev() {
@@ -53,7 +81,9 @@ export default function LoginPage() {
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
             <CardTitle className="text-2xl">Advertisers Portal</CardTitle>
-            <CardDescription>Sign in to launch and manage campaigns.</CardDescription>
+            <CardDescription>
+              {mode === "signup" ? "Create your advertiser account." : "Sign in to launch and manage campaigns."}
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {supabaseConfigured ? (
@@ -64,12 +94,34 @@ export default function LoginPage() {
                 <Button className="w-full" variant="outline" onClick={() => void oauth("github")}>
                   <Github className="h-4 w-4" /> Continue with GitHub
                 </Button>
+
+                <div className="flex items-center gap-3 py-1 text-xs text-muted-foreground">
+                  <div className="h-px flex-1 bg-border" /> or with email <div className="h-px flex-1 bg-border" />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input id="email" type="email" autoComplete="email" placeholder="you@company.com"
+                    value={email} onChange={(e) => setEmail(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="pw">Password</Label>
+                  <Input id="pw" type="password" autoComplete={mode === "signup" ? "new-password" : "current-password"}
+                    value={password} onChange={(e) => setPassword(e.target.value)} />
+                </div>
+                <Button className="w-full" disabled={busy || !email || !password} onClick={() => void emailAuth()}>
+                  {busy ? "Please wait…" : mode === "signup" ? "Create account" : "Sign in"}
+                </Button>
+                <button type="button" className="w-full text-center text-xs text-muted-foreground hover:text-foreground"
+                  onClick={() => { setMode(mode === "signup" ? "signin" : "signup"); setErr(null); setNotice(null); }}>
+                  {mode === "signup" ? "Already have an account? Sign in" : "New advertiser? Create an account"}
+                </button>
               </>
             ) : (
               <div className="space-y-3">
                 <p className="rounded-md bg-muted p-3 text-xs text-muted-foreground">
-                  Local/dev mode — Supabase Auth isn&apos;t configured, so Google/GitHub are
-                  disabled. Enter any email to sign in against the local backend.
+                  Local/dev mode — Supabase Auth isn&apos;t configured. Enter any email to sign in
+                  against the local backend.
                 </p>
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
@@ -81,10 +133,11 @@ export default function LoginPage() {
                 </Button>
               </div>
             )}
+            {notice && <p className="text-center text-sm text-emerald-600 dark:text-emerald-400">{notice}</p>}
             {err && <p className="text-center text-sm text-destructive">{err}</p>}
             <p className="text-center text-xs text-muted-foreground">
               By continuing you agree to our{" "}
-              <Link href="/terms" className="text-primary underline-offset-4 hover:underline">Terms &amp; Acceptable Use</Link>.
+              <Link href="/terms" className="text-primary underline-offset-4 hover:underline">Terms</Link>.
             </p>
           </CardContent>
         </Card>
