@@ -28,6 +28,8 @@ export interface Campaign {
   advertiser_name: string;
   text: string;
   active: boolean;
+  status?: string;
+  review_flag?: string | null;
   impressions: number;
   clicks: number;
   spend: number;
@@ -37,6 +39,7 @@ export interface Campaign {
 export interface Metrics {
   totals: Totals;
   ad_serving_enabled: boolean;
+  flagged_campaigns?: number;
   campaigns: Campaign[];
 }
 

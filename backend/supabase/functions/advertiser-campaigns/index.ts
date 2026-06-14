@@ -107,8 +107,9 @@ Deno.serve(async (req) => {
         status: approved ? "approved" : "rejected",
         active: approved,
         moderation_reason: approved ? null : verdict.reason,
+        review_flag: approved ? (verdict.flag ?? null) : null,
       })
-      .select("id, status, moderation_reason")
+      .select("id, status, moderation_reason, review_flag")
       .single();
 
     if (e) {

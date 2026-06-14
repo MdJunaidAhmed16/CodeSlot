@@ -18,7 +18,7 @@ export interface AdInput {
 }
 
 export type ModerationResult =
-  | { ok: true }
+  | { ok: true; flag?: string } // approved; `flag` = soft warning for the owner
   | { ok: false; category: string; reason: string };
 
 // ── 1. Banned category keywords ──────────────────────────────────
@@ -145,13 +145,129 @@ export async function moderateAd(ad: AdInput): Promise<ModerationResult> {
     }
   }
 
-  // 4. Google Safe Browsing (authoritative, if configured).
+  // 4. Google Safe Browsing on the declared URL (authoritative, if configured).
   const sbReason = await safeBrowsingCheck(ad.url);
   if (sbReason) {
     return { ok: false, category: "phishing", reason: sbReason };
   }
 
+  // 5. Follow redirects and screen the REAL destination (catches cloaking /
+  //    shorteners / bait-and-switch that the declared URL hides).
+  const trace = await traceRedirects(ad.url);
+  if (trace.reject) {
+    return { ok: false, category: "redirect", reason: trace.reject };
+  }
+  if (trace.finalUrl && trace.finalUrl !== ad.url) {
+    const finalCat = screenString(trace.finalUrl.toLowerCase());
+    if (finalCat) {
+      return { ok: false, category: finalCat, reason: `Redirect destination matched a prohibited category (${finalCat}).` };
+    }
+    const finalSb = await safeBrowsingCheck(trace.finalUrl);
+    if (finalSb) {
+      return { ok: false, category: "phishing", reason: `Redirect destination ${finalSb}` };
+    }
+    const declaredReg = registrableDomain(new URL(ad.url).hostname.toLowerCase());
+    const finalReg = registrableDomain(new URL(trace.finalUrl).hostname.toLowerCase());
+    if (declaredReg !== finalReg) {
+      // Suspicious but not necessarily malicious → flag for the owner.
+      return { ok: true, flag: `Redirects to a different domain (${finalReg}) than displayed (${declaredReg}).` };
+    }
+  }
+  if (trace.unreachable) {
+    return { ok: true, flag: "Destination did not respond during review." };
+  }
+  if (trace.hops > 3) {
+    return { ok: true, flag: `Long redirect chain (${trace.hops} hops).` };
+  }
+
   return { ok: true };
+}
+
+/** Returns the matched prohibited category for a string, or null. */
+function screenString(s: string): string | null {
+  for (const [category, words] of Object.entries(CATEGORIES)) {
+    for (const w of words) {
+      if (containsTerm(s, w)) return category;
+    }
+  }
+  return null;
+}
+
+function isInternalHost(host: string): boolean {
+  if (host === "localhost" || host.endsWith(".local") || host.endsWith(".internal")) return true;
+  if (host === "0.0.0.0" || host === "::1" || host === "[::1]") return true;
+  if (/^127\./.test(host)) return true;
+  if (/^10\./.test(host)) return true;
+  if (/^192\.168\./.test(host)) return true;
+  if (/^172\.(1[6-9]|2\d|3[01])\./.test(host)) return true;
+  if (/^169\.254\./.test(host)) return true; // link-local / cloud metadata
+  return false;
+}
+
+interface TraceResult {
+  finalUrl: string;
+  hops: number;
+  reject?: string;
+  unreachable?: boolean;
+}
+
+/**
+ * Follow up to 5 redirect hops (manual), returning the final destination.
+ * Hardened against SSRF: refuses internal/private hosts and raw-IP redirect
+ * targets, times out each hop, and never reads the response body.
+ */
+async function traceRedirects(start: string): Promise<TraceResult> {
+  let current = start;
+  let hops = 0;
+  for (let i = 0; i < 6; i++) {
+    let u: URL;
+    try {
+      u = new URL(current);
+    } catch {
+      return { finalUrl: current, hops, reject: "Invalid URL in redirect chain." };
+    }
+    if (u.protocol !== "https:" && u.protocol !== "http:") {
+      return { finalUrl: current, hops, reject: "Unsupported scheme in redirect chain." };
+    }
+    const host = u.hostname.toLowerCase();
+    if (isInternalHost(host)) {
+      return { finalUrl: current, hops, reject: "Redirect targets an internal/private host." };
+    }
+    if (i > 0 && IP_LITERAL.test(host)) {
+      return { finalUrl: current, hops, reject: "Redirect targets a raw IP address." };
+    }
+
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 4000);
+    let res: Response;
+    try {
+      res = await fetch(current, {
+        method: "GET",
+        redirect: "manual",
+        signal: ctrl.signal,
+        headers: { "user-agent": "CodeSlot-Moderation/1.0" },
+      });
+    } catch {
+      clearTimeout(timer);
+      return { finalUrl: current, hops, unreachable: true };
+    }
+    clearTimeout(timer);
+    await res.body?.cancel().catch(() => {}); // don't download the body
+
+    if (res.status >= 300 && res.status < 400) {
+      const loc = res.headers.get("location");
+      if (!loc) break;
+      try {
+        current = new URL(loc, current).toString();
+      } catch {
+        return { finalUrl: current, hops, reject: "Invalid redirect target." };
+      }
+      hops++;
+      continue;
+    }
+    return { finalUrl: current, hops }; // 2xx/4xx/5xx → final
+  }
+  return { finalUrl: current, hops, reject: "Too many redirects." };
 }
 
 function containsTerm(haystack: string, term: string): boolean {

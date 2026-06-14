@@ -7,7 +7,7 @@ import { Card, CardContent } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { cn } from "../lib/utils";
 import {
-  SquareDot, LayoutDashboard, BarChart3, Megaphone, LogOut, Power, Plus, RefreshCw,
+  SquareDot, LayoutDashboard, BarChart3, Megaphone, LogOut, Power, Plus, RefreshCw, AlertTriangle,
 } from "lucide-react";
 
 const money = (n: number) =>
@@ -136,6 +136,7 @@ export function Dashboard({
             <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
               <Stat label="Developers" value={t.users.toLocaleString()} sub="using the extension" />
               <Stat label="Campaigns running" value={`${t.active_campaigns} / ${t.total_campaigns}`} sub="active / total" />
+              <Stat label="Flagged for review" value={String(metrics.flagged_campaigns ?? 0)} sub="auto-approved but suspicious" accent={(metrics.flagged_campaigns ?? 0) > 0} />
               <Stat label="Credits earned" value={t.credits_earned.toLocaleString()} sub={money(t.earned_usd) + " value"} />
               <Stat label="Credits redeemed" value={t.credits_redeemed.toLocaleString()} sub={`${money(t.redeemed_usd)} · ${t.redemptions} redemptions`} />
               <Stat label="Outstanding liability" value={money(t.outstanding_usd)} sub="earned, not yet redeemed" />
@@ -189,9 +190,19 @@ export function Dashboard({
                   return (
                     <tr key={c.id} className="border-b last:border-0">
                       <td className="py-3 font-semibold">{c.advertiser_name}</td>
-                      <td className="max-w-[220px] truncate text-muted-foreground">{c.text}</td>
+                      <td className="max-w-[220px] text-muted-foreground">
+                        <div className="truncate">{c.text}</div>
+                        {c.review_flag && (
+                          <div className="mt-0.5 flex items-start gap-1 text-xs text-amber-500">
+                            <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" /> {c.review_flag}
+                          </div>
+                        )}
+                      </td>
                       <td>
-                        <Badge variant={c.active ? "success" : "secondary"}>{c.active ? "Running" : "Paused"}</Badge>
+                        <div className="flex items-center gap-1.5">
+                          <Badge variant={c.active ? "success" : "secondary"}>{c.active ? "Running" : "Paused"}</Badge>
+                          {c.review_flag && <Badge variant="warning">Flagged</Badge>}
+                        </div>
                       </td>
                       <td className="text-right font-mono">{c.impressions.toLocaleString()}</td>
                       <td className="text-right font-mono">{c.clicks.toLocaleString()}</td>

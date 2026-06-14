@@ -30,6 +30,7 @@ cd backend
 supabase link --project-ref <your-project-ref>
 supabase db push                       # applies schema.sql (tables, RLS, RPCs)
 # or paste schema.sql into the Supabase SQL editor and run it
+psql "$SUPABASE_DB_URL" -f storage.sql # ad-logos storage bucket + policies
 psql "$SUPABASE_DB_URL" -f seed.sql    # optional: 3–4 starter ads
 ```
 
@@ -163,8 +164,11 @@ advertiser register/login and the campaign portal live in `web/` (Next.js).
 
 **Advertiser flow:** sign in with Google/GitHub → submit a campaign → it's
 **auto-moderated** (adult/gambling/malware/phishing/brand-impersonation +
-URL-structure + Safe Browsing). Clean campaigns go **live instantly**; unsafe
-ones are **rejected with a reason** and never serve. No manual approval needed.
+URL-structure + Safe Browsing + **redirect tracing** to the real destination).
+Clean campaigns go **live instantly**; unsafe ones are **rejected with a reason**
+and never serve. Suspicious-but-not-malicious campaigns (e.g. redirecting to a
+different domain) are approved but **flagged** — visible to the owner on the
+Platform dashboard ("Flagged for review") so you can pause them if needed.
 
 ---
 

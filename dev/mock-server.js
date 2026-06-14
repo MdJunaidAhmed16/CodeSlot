@@ -128,6 +128,11 @@ function moderateAdJs(ad) {
   for (const [brand, officials] of Object.entries(MOD_BRANDS))
     if (host.includes(brand) && !officials.some((o) => host.endsWith(o)))
       return { ok: false, reason: `Possible brand impersonation of "${brand}".` };
+  // Soft flag (mock hook): URLs that look like redirectors are approved but
+  // flagged for the owner. Real backend follows redirects to the destination.
+  if (/redirect|\/r\/|\/go\//i.test(ad.url)) {
+    return { ok: true, flag: "Redirects to a different domain (review recommended)." };
+  }
   return { ok: true };
 }
 
@@ -318,6 +323,7 @@ const server = http.createServer(async (req, res) => {
           description: b.description || "", brand_color: b.brand_color || null, logo_url: b.logo_url || null,
           weight: 1, active: verdict.ok, status: verdict.ok ? "approved" : "rejected",
           moderation_reason: verdict.ok ? null : verdict.reason,
+          review_flag: verdict.ok ? (verdict.flag || null) : null,
           budget_remaining: verdict.ok ? budget : 0, cost_per_impression: 0.01, cost_per_click: 0.2, reward_imp: 5, reward_click: 75,
         };
         ADS.push(ad);
@@ -398,7 +404,7 @@ function advCampaignView(a) {
   const c = adsWithMetrics().find((m) => m.id === a.ad_id) || { impressions: 0, clicks: 0, spend: 0 };
   return {
     id: a.ad_id, advertiser_name: a.advertiser_name, text: a.text, url: a.url, description: a.description,
-    brand_color: a.brand_color, logo_url: a.logo_url, status: a.status, moderation_reason: a.moderation_reason || null,
+    brand_color: a.brand_color, logo_url: a.logo_url, status: a.status, moderation_reason: a.moderation_reason || null, review_flag: a.review_flag || null,
     active: a.active, weight: a.weight, budget_remaining: a.budget_remaining,
     cost_per_impression: a.cost_per_impression, cost_per_click: a.cost_per_click,
     impressions: c.impressions, clicks: c.clicks, spend: c.spend,
@@ -417,7 +423,7 @@ function adsWithMetrics() {
   }
   return ADS.map((a) => {
     const c = counts[a.advertiser_name] || { impressions: 0, clicks: 0 };
-    return { id: a.ad_id, advertiser_name: a.advertiser_name, text: a.text, active: a.active, budget_remaining: a.budget_remaining, weight: a.weight, impressions: c.impressions, clicks: c.clicks, spend: Math.round((c.impressions * a.cost_per_impression + c.clicks * a.cost_per_click) * 100) / 100 };
+    return { id: a.ad_id, advertiser_name: a.advertiser_name, text: a.text, active: a.active, status: a.status, review_flag: a.review_flag || null, budget_remaining: a.budget_remaining, weight: a.weight, impressions: c.impressions, clicks: c.clicks, spend: Math.round((c.impressions * a.cost_per_impression + c.clicks * a.cost_per_click) * 100) / 100 };
   });
 }
 
@@ -446,7 +452,8 @@ function adminMetrics() {
       redemptions, total_campaigns: ads.length, active_campaigns: ads.filter((a) => a.active).length,
     },
     ad_serving_enabled: flags.ad_serving_enabled,
-    campaigns: ads.map((a) => ({ id: a.id, advertiser_name: a.advertiser_name, text: a.text, active: a.active, impressions: a.impressions, clicks: a.clicks, spend: a.spend, budget_remaining: a.budget_remaining })),
+    flagged_campaigns: ads.filter((a) => a.review_flag).length,
+    campaigns: ads.map((a) => ({ id: a.id, advertiser_name: a.advertiser_name, text: a.text, active: a.active, status: a.status, review_flag: a.review_flag || null, impressions: a.impressions, clicks: a.clicks, spend: a.spend, budget_remaining: a.budget_remaining })),
   };
 }
 

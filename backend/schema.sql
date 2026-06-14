@@ -68,6 +68,9 @@ create table if not exists ads (
   status              text    not null default 'approved'
                         check (status in ('approved','rejected','pending','paused')),
   moderation_reason   text,
+  -- Soft warning: the ad is approved & serving, but flagged as suspicious
+  -- (e.g. redirects to a different domain). Surfaced in the owner dashboard.
+  review_flag         text,
   brand_color         text    check (brand_color is null or brand_color ~* '^#[0-9a-f]{3,8}$'),
   logo_url            text    check (logo_url is null or logo_url ~* '^https://'),
   weight              int     not null default 1 check (weight >= 0),
@@ -350,6 +353,8 @@ create or replace view ad_metrics as
     a.advertiser_name,
     a.text,
     a.active,
+    a.status,
+    a.review_flag,
     a.budget_remaining,
     a.weight,
     count(*) filter (where i.event_type = 'impression') as impressions,
