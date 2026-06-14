@@ -81,7 +81,18 @@ Deno.serve(async (req) => {
     // Payments is enabled on the account.
     const keyId = Deno.env.get("RAZORPAY_KEY_ID");
     const keySecret = Deno.env.get("RAZORPAY_KEY_SECRET");
-    if (!keyId || !keySecret) return error("payments unavailable", 503);
+    if (!keyId || !keySecret) {
+      // Diagnostic (names/lengths only — never logs the secret values).
+      console.error("payment-create 503: razorpay keys not visible", {
+        has_RAZORPAY_KEY_ID: Boolean(keyId),
+        has_RAZORPAY_KEY_SECRET: Boolean(keySecret),
+        key_id_len: keyId?.length ?? 0,
+        razorpay_env_names: Object.keys(Deno.env.toObject()).filter((k) =>
+          k.includes("RAZORPAY")
+        ),
+      });
+      return error("payments unavailable", 503);
+    }
     const res = await fetch("https://api.razorpay.com/v1/orders", {
       method: "POST",
       headers: {
