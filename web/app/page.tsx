@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { MODEL_POINTS } from "@/lib/content";
+import { WhereAdShows } from "@/components/where-ad-shows";
 import { ArrowRight, Code2, ShieldCheck, Sparkles, Megaphone } from "lucide-react";
 
 export default function HomePage() {
@@ -67,6 +68,9 @@ export default function HomePage() {
             ))}
           </div>
         </section>
+
+        {/* Where the ad shows */}
+        <WhereAdShows />
 
         {/* Value props */}
         <section className="container py-24">
