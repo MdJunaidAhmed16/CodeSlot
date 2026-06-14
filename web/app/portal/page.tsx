@@ -15,7 +15,8 @@ import {
 } from "@/lib/api";
 import { getSupabase, supabaseConfigured } from "@/lib/supabase";
 import { openRazorpay } from "@/lib/razorpay";
-import { CheckCircle2, XCircle, ExternalLink, Plus, LogOut, Wallet } from "lucide-react";
+import { uploadLogo } from "@/lib/storage";
+import { CheckCircle2, XCircle, ExternalLink, Plus, LogOut, Wallet, Upload, ImageIcon } from "lucide-react";
 
 export default function PortalPage() {
   const router = useRouter();
@@ -92,8 +93,25 @@ function NewCampaign({ wallet, onDone }: { wallet: number; onDone: () => Promise
   const [form, setForm] = useState({ advertiser_name: "", text: "", url: "", description: "", budget_remaining: "50" });
   const [useColor, setUseColor] = useState(false);
   const [brandColor, setBrandColor] = useState("#3ecf8e");
+  const [logoUrl, setLogoUrl] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [logoErr, setLogoErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<{ ok: boolean; msg: string } | null>(null);
+
+  async function onLogoFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setLogoErr(null);
+    setUploading(true);
+    try {
+      setLogoUrl(await uploadLogo(file));
+    } catch (err) {
+      setLogoErr(err instanceof Error ? err.message : "Upload failed");
+    } finally {
+      setUploading(false);
+    }
+  }
 
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setForm({ ...form, [k]: e.target.value });
@@ -109,11 +127,13 @@ function NewCampaign({ wallet, onDone }: { wallet: number; onDone: () => Promise
         url: form.url,
         description: form.description || undefined,
         brand_color: useColor ? brandColor : undefined,
+        logo_url: logoUrl || undefined,
         budget_remaining: Number(form.budget_remaining) || 0,
       });
       if (r.approved) {
         setResult({ ok: true, msg: "Approved and live! 🎉" });
         setForm({ advertiser_name: "", text: "", url: "", description: "", budget_remaining: "50" });
+        setLogoUrl("");
       } else {
         setResult({ ok: false, msg: r.reason ?? "Rejected by automated review." });
       }
@@ -137,6 +157,33 @@ function NewCampaign({ wallet, onDone }: { wallet: number; onDone: () => Promise
           <Field label="Ad text (max 120 chars)"><Input required maxLength={120} value={form.text} onChange={set("text")} placeholder="Acme CI — faster builds →" /></Field>
           <Field label="Destination URL (https)"><Input required type="url" value={form.url} onChange={set("url")} placeholder="https://acme.dev" /></Field>
           <Field label="Description (optional)"><Textarea value={form.description} onChange={set("description")} placeholder="One line shown in the tooltip." /></Field>
+
+          <div className="space-y-2">
+            <Label>Logo (optional)</Label>
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-md border bg-muted">
+                {logoUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={logoUrl} alt="logo" className="h-full w-full object-contain" />
+                ) : (
+                  <ImageIcon className="h-5 w-5 text-muted-foreground" />
+                )}
+              </div>
+              <div className="flex-1 space-y-2">
+                {supabaseConfigured ? (
+                  <label className="inline-flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-sm hover:bg-accent">
+                    <Upload className="h-4 w-4" />
+                    {uploading ? "Uploading…" : logoUrl ? "Replace image" : "Upload image"}
+                    <input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" className="hidden" onChange={onLogoFile} disabled={uploading} />
+                  </label>
+                ) : (
+                  <Input placeholder="https://…/logo.png" value={logoUrl} onChange={(e) => setLogoUrl(e.target.value)} />
+                )}
+                <p className="text-xs text-muted-foreground">PNG/JPG/WEBP/SVG, max 512 KB.</p>
+              </div>
+            </div>
+            {logoErr && <p className="text-xs text-destructive">{logoErr}</p>}
+          </div>
 
           <div className="space-y-2">
             <label className="flex items-center gap-2 text-sm font-medium">
