@@ -68,6 +68,11 @@ supabase secrets set \
 # SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are injected automatically.
 # The account in OWNER_GITHUB_* becomes owner+admin automatically on first sign-in.
 
+# 2b. Already have a DB from a previous run? Sync new columns first.
+#     (schema.sql's `create table if not exists` never adds columns to an
+#      existing table, so run the idempotent migration before deploying.)
+psql "$SUPABASE_DB_URL" -f migrate.sql   # or paste migrate.sql in the SQL editor
+
 # 3. Deploy functions
 supabase functions deploy auth serve-ad track-event balance redeem-credits \
   delete-data advertiser-campaigns payment-create payment-webhook-stripe \
