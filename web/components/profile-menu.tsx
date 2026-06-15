@@ -14,6 +14,7 @@ export function ProfileMenu({ email }: { email: string | null }) {
   const [account, setAccount] = useState<Account | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [delErr, setDelErr] = useState<string | null>(null);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -39,12 +40,14 @@ export function ProfileMenu({ email }: { email: string | null }) {
 
   async function remove() {
     setBusy(true);
+    setDelErr(null);
     try {
       await deleteAccount();
       if (supabaseConfigured) await getSupabase()?.auth.signOut();
       else devSignOut();
       router.replace("/");
-    } catch {
+    } catch (e) {
+      setDelErr(e instanceof Error ? e.message : "Could not delete account.");
       setBusy(false);
     }
   }
@@ -95,6 +98,7 @@ export function ProfileMenu({ email }: { email: string | null }) {
               <p className="text-xs text-muted-foreground">
                 Delete your account, all campaigns, and wallet history? This can&apos;t be undone.
               </p>
+              {delErr && <p className="text-xs text-destructive">{delErr}</p>}
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" className="flex-1" onClick={() => setConfirming(false)}>Cancel</Button>
                 <Button variant="destructive" size="sm" className="flex-1" disabled={busy} onClick={() => void remove()}>
