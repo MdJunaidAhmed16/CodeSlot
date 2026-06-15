@@ -16,7 +16,7 @@ import {
 import { getSupabase, supabaseConfigured } from "@/lib/supabase";
 import { openRazorpay } from "@/lib/razorpay";
 import { uploadLogo } from "@/lib/storage";
-import { useCurrency, fmt, symbol, toUsd } from "@/lib/currency";
+import { useCurrency, fmt, symbol, toUsd, ensureFxRate, getRate } from "@/lib/currency";
 import { ProfileMenu } from "@/components/profile-menu";
 import { CheckCircle2, XCircle, ExternalLink, Plus, LogOut, Wallet, Upload, ImageIcon } from "lucide-react";
 
@@ -41,6 +41,7 @@ export default function PortalPage() {
   }, []);
 
   useEffect(() => {
+    ensureFxRate(); // load today's USD↔INR rate
     (async () => {
       if (!(await isSignedIn())) {
         router.replace("/login");
@@ -376,6 +377,11 @@ function AddFundsDialog({ onClose, onDone }: { onClose: () => void; onDone: () =
           <div className="space-y-1.5">
             <Label>Amount ({sym})</Label>
             <Input type="number" min={0} value={amount} onChange={(e) => setAmount(e.target.value)} />
+            {currency === "inr" && (
+              <p className="text-xs text-muted-foreground">
+                Today&apos;s rate $1 = ₹{getRate().toFixed(2)} · credits ≈ ${(toUsd(Number(amount) || 0, "inr")).toFixed(2)} to your wallet
+              </p>
+            )}
           </div>
           {err && <p className="text-sm text-destructive">{err}</p>}
           <div className="flex justify-end gap-2">

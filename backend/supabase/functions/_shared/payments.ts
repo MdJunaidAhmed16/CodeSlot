@@ -4,9 +4,10 @@
 export type Currency = "usd" | "inr";
 export type Provider = "stripe" | "razorpay";
 
+/** Static fallback rate; the live rate comes from _shared/fx.ts getUsdInrRate(). */
 export function usdInrRate(): number {
   const r = Number(Deno.env.get("USD_INR_RATE"));
-  return Number.isFinite(r) && r > 0 ? r : 83; // sane default
+  return Number.isFinite(r) && r > 0 ? r : 83;
 }
 
 /** Default currency for a 2-letter country code. India → INR, else USD. */
@@ -24,9 +25,10 @@ export function toMinor(amount: number): number {
   return Math.round(amount * 100);
 }
 
-/** USD value credited to the wallet for a payment in `currency`. */
-export function amountToUsd(amountMajor: number, currency: Currency): number {
-  const usd = currency === "inr" ? amountMajor / usdInrRate() : amountMajor;
+/** USD value credited to the wallet for a payment in `currency` at `rate`
+ *  (USD→INR). Defaults to the static fallback if no live rate is supplied. */
+export function amountToUsd(amountMajor: number, currency: Currency, rate = usdInrRate()): number {
+  const usd = currency === "inr" ? amountMajor / rate : amountMajor;
   return Math.round(usd * 100) / 100;
 }
 

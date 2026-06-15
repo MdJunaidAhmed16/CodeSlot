@@ -12,6 +12,7 @@ import { requireAdvertiser } from "../_shared/advertiser.ts";
 import {
   amountToUsd, currencyForCountry, providerForCurrency, toMinor, type Currency,
 } from "../_shared/payments.ts";
+import { getUsdInrRate } from "../_shared/fx.ts";
 
 const MIN_USD = 5;
 const MAX_USD = 100000;
@@ -39,7 +40,8 @@ Deno.serve(async (req) => {
       ? body.currency
       : currencyForCountry(typeof body.country === "string" ? body.country : null);
 
-  const amountUsd = amountToUsd(amount, currency);
+  const fxRate = await getUsdInrRate(); // today's USD→INR (cached)
+  const amountUsd = amountToUsd(amount, currency, fxRate);
   if (amountUsd < MIN_USD) return error(`minimum top-up is $${MIN_USD}`, 400);
   if (amountUsd > MAX_USD) return error("amount too large", 400);
 

@@ -44,7 +44,16 @@ const advByEmail = new Map();
 const advWallet = new Map();
 /** advertiserId -> [payment] */
 const advPayments = new Map();
-const USD_INR_RATE = 83;
+let USD_INR_RATE = 83; // fallback; refreshed live from frankfurter
+let fxAt = 0;
+async function getMockRate() {
+  if (Date.now() - fxAt < 6 * 3600 * 1000) return USD_INR_RATE;
+  try {
+    const r = await fetch("https://api.frankfurter.app/latest?from=USD&to=INR");
+    if (r.ok) { const j = await r.json(); const v = Number(j?.rates?.INR); if (v > 0) { USD_INR_RATE = v; fxAt = Date.now(); } }
+  } catch { /* keep fallback */ }
+  return USD_INR_RATE;
+}
 const walletOf = (id) => advWallet.get(id) || 0;
 let mockOpenRouterSpent = 0; // running total of $ spent minting OpenRouter keys
 
@@ -194,6 +203,11 @@ const server = http.createServer(async (req, res) => {
       sessions.set(token, uid);
       log(`auth → @${login} (${DEV_OWNER ? "owner" : "admin"}) ${gh ? "[verified]" : "[stub/offline]"}`);
       return send(res, 200, { token, user: { id: uid, login, is_owner: DEV_OWNER, is_admin: true, balance: balanceOf(uid) } });
+    }
+
+    // GET /fx-rate (public)
+    if (path === "fx-rate" && req.method === "GET") {
+      return send(res, 200, { usd_inr: await getMockRate() });
     }
 
     // GET /serve-ad (anonymous)
@@ -399,7 +413,8 @@ const server = http.createServer(async (req, res) => {
       if (!isFinite(amount) || amount <= 0) return send(res, 400, { error: "invalid amount" });
       const currency = b.currency === "inr" || b.currency === "usd" ? b.currency
         : (String(b.country || "").toUpperCase() === "IN" ? "inr" : "usd");
-      const amountUsd = Math.round((currency === "inr" ? amount / USD_INR_RATE : amount) * 100) / 100;
+      const rate = await getMockRate();
+      const amountUsd = Math.round((currency === "inr" ? amount / rate : amount) * 100) / 100;
       if (amountUsd < 5) return send(res, 400, { error: "minimum top-up is $5" });
       // USD prefers Stripe, but falls back to Razorpay (International) when
       // Stripe isn't configured. INR always Razorpay.

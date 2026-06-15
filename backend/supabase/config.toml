@@ -13,6 +13,9 @@ verify_jwt = false
 [functions.serve-ad]
 verify_jwt = false
 
+[functions.fx-rate]
+verify_jwt = false
+
 [functions.track-event]
 verify_jwt = false
 
