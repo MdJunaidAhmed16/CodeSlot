@@ -20,11 +20,14 @@ export interface Campaign {
   status: "approved" | "rejected" | "pending" | "paused";
   moderation_reason?: string | null;
   active: boolean;
+  billing_model?: "cpm" | "cpc";
   budget_remaining: number;
   impressions?: number;
   clicks?: number;
   spend?: number;
 }
+
+export type BillingModel = "cpm" | "cpc";
 
 export interface SubmitInput {
   advertiser_name: string;
@@ -33,8 +36,15 @@ export interface SubmitInput {
   description?: string;
   brand_color?: string;
   logo_url?: string;
+  billing_model?: BillingModel;
   budget_remaining?: number;
 }
+
+// Launch rate card (display only — the backend is authoritative).
+export const RATES = {
+  cpm: { label: "CPM", price: "$10", per: "per 1,000 impressions", costPerImpression: 0.01 },
+  cpc: { label: "CPC", price: "$0.30", per: "per click", costPerClick: 0.3 },
+} as const;
 
 /** Returns the access token used to call advertiser endpoints. */
 async function accessToken(): Promise<string | null> {

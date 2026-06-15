@@ -10,8 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import {
-  type Campaign, type Currency, listCampaigns, submitCampaign, isSignedIn, devSignOut, devEmail,
-  createPayment, guessCurrency,
+  type Campaign, type Currency, type BillingModel, RATES, listCampaigns, submitCampaign,
+  isSignedIn, devSignOut, devEmail, createPayment, guessCurrency,
 } from "@/lib/api";
 import { getSupabase, supabaseConfigured } from "@/lib/supabase";
 import { openRazorpay } from "@/lib/razorpay";
@@ -111,6 +111,7 @@ export default function PortalPage() {
 
 function NewCampaign({ wallet, onDone }: { wallet: number; onDone: () => Promise<void> }) {
   const [form, setForm] = useState({ advertiser_name: "", text: "", url: "", description: "", budget_remaining: "50" });
+  const [billing, setBilling] = useState<BillingModel>("cpm");
   const [useColor, setUseColor] = useState(false);
   const [brandColor, setBrandColor] = useState("#3ecf8e");
   const [logoUrl, setLogoUrl] = useState("");
@@ -148,6 +149,7 @@ function NewCampaign({ wallet, onDone }: { wallet: number; onDone: () => Promise
         description: form.description || undefined,
         brand_color: useColor ? brandColor : undefined,
         logo_url: logoUrl || undefined,
+        billing_model: billing,
         budget_remaining: Number(form.budget_remaining) || 0,
       });
       if (r.approved) {
@@ -220,9 +222,35 @@ function NewCampaign({ wallet, onDone }: { wallet: number; onDone: () => Promise
             <AdPreview text={form.text || "Acme CI — faster builds →"} color={useColor ? brandColor : null} />
           </div>
 
+          <div className="space-y-2">
+            <Label>Billing model</Label>
+            <div className="grid grid-cols-2 gap-2">
+              <button type="button" onClick={() => setBilling("cpm")}
+                className={`rounded-md border p-3 text-left text-sm ${billing === "cpm" ? "border-primary ring-1 ring-primary" : ""}`}>
+                <div className="font-semibold">CPM · {RATES.cpm.price}</div>
+                <div className="text-xs text-muted-foreground">Pay {RATES.cpm.per}</div>
+              </button>
+              <button type="button" onClick={() => setBilling("cpc")}
+                className={`rounded-md border p-3 text-left text-sm ${billing === "cpc" ? "border-primary ring-1 ring-primary" : ""}`}>
+                <div className="font-semibold">CPC · {RATES.cpc.price}</div>
+                <div className="text-xs text-muted-foreground">Pay {RATES.cpc.per}</div>
+              </button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {billing === "cpm"
+                ? "Charged per impression; clicks are free. Developers earn on impressions."
+                : "Charged only when a developer clicks; impressions are free."}
+            </p>
+          </div>
+
           <Field label="Budget (USD)">
             <Input type="number" min={0} value={form.budget_remaining} onChange={set("budget_remaining")} />
-            <p className="text-xs text-muted-foreground">Drawn from your wallet (${wallet.toFixed(2)} available).</p>
+            <p className="text-xs text-muted-foreground">
+              Drawn from your wallet (${wallet.toFixed(2)} available) ·{" "}
+              {billing === "cpm"
+                ? `≈ ${Math.round((Number(form.budget_remaining) || 0) / RATES.cpm.costPerImpression).toLocaleString()} impressions`
+                : `≈ ${Math.round((Number(form.budget_remaining) || 0) / RATES.cpc.costPerClick).toLocaleString()} clicks`}
+            </p>
           </Field>
           <Button type="submit" className="w-full" disabled={busy || Number(form.budget_remaining) > wallet}>
             {busy ? "Reviewing…" : Number(form.budget_remaining) > wallet ? "Add funds to launch" : "Submit campaign"}

@@ -5,6 +5,7 @@
 import { error, handleOptions, isSafeHttpUrl, json, readJson } from "../_shared/http.ts";
 import { requireAdvertiser } from "../_shared/advertiser.ts";
 import { moderateAd } from "../_shared/moderation.ts";
+import { ratesFor, type BillingModel } from "../_shared/economics.ts";
 
 const HEX = /^#[0-9a-fA-F]{3,8}$/;
 const MAX_BUDGET = 100000; // USD ceiling per submission (sanity bound)
@@ -20,7 +21,7 @@ Deno.serve(async (req) => {
     const { data, error: e } = await db
       .from("ads")
       .select(
-        "id, advertiser_name, text, url, description, brand_color, logo_url, status, moderation_reason, active, weight, budget_remaining, cost_per_impression, cost_per_click, created_at"
+        "id, advertiser_name, text, url, description, brand_color, logo_url, billing_model, status, moderation_reason, active, weight, budget_remaining, cost_per_impression, cost_per_click, created_at"
       )
       .eq("advertiser_id", advertiserId)
       .order("created_at", { ascending: false });
@@ -66,6 +67,8 @@ Deno.serve(async (req) => {
     }
     if (!isSafeHttpUrl(url)) return error("a valid destination URL is required", 400);
 
+    const billing_model: BillingModel = body.billing_model === "cpc" ? "cpc" : "cpm";
+    const rates = ratesFor(billing_model);
     const budget = clampNum(body.budget_remaining, 0, MAX_BUDGET);
     const brand_color =
       typeof body.brand_color === "string" && HEX.test(body.brand_color)
@@ -103,6 +106,11 @@ Deno.serve(async (req) => {
         description,
         brand_color,
         logo_url,
+        billing_model,
+        cost_per_impression: rates.cost_per_impression,
+        reward_per_impression: rates.reward_per_impression,
+        cost_per_click: rates.cost_per_click,
+        reward_per_click: rates.reward_per_click,
         budget_remaining: approved ? budget : 0,
         status: approved ? "approved" : "rejected",
         active: approved,

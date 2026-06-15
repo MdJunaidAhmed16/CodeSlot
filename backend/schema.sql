@@ -74,11 +74,15 @@ create table if not exists ads (
   brand_color         text    check (brand_color is null or brand_color ~* '^#[0-9a-f]{3,8}$'),
   logo_url            text    check (logo_url is null or logo_url ~* '^https://'),
   weight              int     not null default 1 check (weight >= 0),
+  -- A campaign is billed by impressions (CPM) OR clicks (CPC), never both.
+  billing_model       text    not null default 'cpm' check (billing_model in ('cpm','cpc')),
   budget_remaining    numeric not null default 0 check (budget_remaining >= 0),
+  -- Defaults below are the CPM rate card; CPC campaigns override these so the
+  -- unbilled side is 0 (no charge, no reward).
   cost_per_impression numeric not null default 0.01 check (cost_per_impression >= 0),  -- $10 CPM
-  cost_per_click      numeric not null default 0.20 check (cost_per_click >= 0),        -- $0.20 CPC
-  reward_per_impression numeric not null default 5  check (reward_per_impression >= 0),  -- credits
-  reward_per_click      numeric not null default 75 check (reward_per_click >= 0),        -- credits
+  cost_per_click      numeric not null default 0    check (cost_per_click >= 0),
+  reward_per_impression numeric not null default 4  check (reward_per_impression >= 0),  -- credits (40%)
+  reward_per_click      numeric not null default 0  check (reward_per_click >= 0),        -- credits
   active              boolean not null default true,
   constraint ads_url_scheme check (url ~* '^https?://'),
   created_at          timestamptz not null default now()
@@ -221,24 +225,29 @@ begin
   end if;
 
   -- CORE INVARIANT: a developer is only credited when a real advertiser pays
-  -- for this event. If the ad's remaining budget can't cover the cost, award
-  -- nothing (no ledger entry, no budget change) — credits are never minted
-  -- without backing advertiser revenue.
-  if v_budget < v_cost then
+  -- for this event. If this event type carries a cost (the campaign's billed
+  -- side) but the budget can't cover it, award nothing.
+  if v_cost > 0 and v_budget < v_cost then
     return query select 0::numeric, current_balance(p_user);
     return;
   end if;
 
+  -- Always log the event (for advertiser analytics / CTR), even on the
+  -- unbilled side (e.g. impressions of a CPC campaign).
   insert into impressions(user_id, ad_id, event_type, credits_awarded, idempotency_key)
     values (p_user, p_ad, p_event, v_reward, p_idem)
     returning id into v_imp_id;
 
-  insert into credit_ledger(user_id, amount, reason, reference_id)
-    values (p_user, v_reward, p_event, v_imp_id);
+  -- Credit the developer only when there is a reward (billed side).
+  if v_reward > 0 then
+    insert into credit_ledger(user_id, amount, reason, reference_id)
+      values (p_user, v_reward, p_event, v_imp_id);
+  end if;
 
-  -- Budget is guaranteed >= cost above, so this can't go negative.
-  update ads set budget_remaining = budget_remaining - v_cost
-   where id = p_ad;
+  -- Charge the advertiser only when there is a cost (billed side).
+  if v_cost > 0 then
+    update ads set budget_remaining = budget_remaining - v_cost where id = p_ad;
+  end if;
 
   return query select v_reward, current_balance(p_user);
 end;

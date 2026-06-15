@@ -23,9 +23,9 @@ const DEV_OWNER = process.env.MOCK_OWNER !== "false";
 
 // ── In-memory state ───────────────────────────────────────────────
 const ADS = [
-  { ad_id: randomUUID(), advertiser_name: "Vercel", text: "Vercel — Deploy in seconds →", url: "https://vercel.com", description: "Ship frontend apps with zero config.", brand_color: "#ffffff", logo_url: "https://assets.vercel.com/image/upload/front/favicon/vercel/57x57.png", weight: 3, active: true, status: "approved", budget_remaining: 100, cost_per_impression: 0.01, cost_per_click: 0.2, reward_imp: 5, reward_click: 75 },
-  { ad_id: randomUUID(), advertiser_name: "Supabase", text: "Supabase — Open source Firebase alternative", url: "https://supabase.com", description: "Postgres, auth, and realtime. Free tier forever.", brand_color: "#3ecf8e", logo_url: "https://supabase.com/favicon/favicon-48x48.png", weight: 2, active: true, status: "approved", budget_remaining: 100, cost_per_impression: 0.01, cost_per_click: 0.2, reward_imp: 5, reward_click: 75 },
-  { ad_id: randomUUID(), advertiser_name: "Snyk", text: "Snyk — Find and fix vulnerabilities", url: "https://snyk.io", description: "Developer-first security for your dependencies.", brand_color: "#4c4a73", logo_url: "https://snyk.io/favicon-32x32.png", weight: 1, active: true, status: "approved", budget_remaining: 100, cost_per_impression: 0.01, cost_per_click: 0.2, reward_imp: 5, reward_click: 75 },
+  { ad_id: randomUUID(), advertiser_name: "Vercel", text: "Vercel — Deploy in seconds →", url: "https://vercel.com", description: "Ship frontend apps with zero config.", brand_color: "#ffffff", logo_url: "https://assets.vercel.com/image/upload/front/favicon/vercel/57x57.png", weight: 3, active: true, status: "approved", budget_remaining: 100, billing_model: "cpm", cost_per_impression: 0.01, cost_per_click: 0, reward_imp: 4, reward_click: 0 },
+  { ad_id: randomUUID(), advertiser_name: "Supabase", text: "Supabase — Open source Firebase alternative", url: "https://supabase.com", description: "Postgres, auth, and realtime. Free tier forever.", brand_color: "#3ecf8e", logo_url: "https://supabase.com/favicon/favicon-48x48.png", weight: 2, active: true, status: "approved", budget_remaining: 100, billing_model: "cpm", cost_per_impression: 0.01, cost_per_click: 0, reward_imp: 4, reward_click: 0 },
+  { ad_id: randomUUID(), advertiser_name: "Snyk", text: "Snyk — Find and fix vulnerabilities", url: "https://snyk.io", description: "Developer-first security for your dependencies.", brand_color: "#4c4a73", logo_url: "https://snyk.io/favicon-32x32.png", weight: 1, active: true, status: "approved", budget_remaining: 100, billing_model: "cpm", cost_per_impression: 0.01, cost_per_click: 0, reward_imp: 4, reward_click: 0 },
 ];
 
 let flags = { ad_serving_enabled: true };
@@ -216,12 +216,13 @@ const server = http.createServer(async (req, res) => {
       // No such active ad → never credit (mirrors record_event 'ad not available').
       if (!ad || !ad.active) return send(res, 409, { error: "ad not available" });
       const cost = b.event_type === "click" ? ad.cost_per_click : ad.cost_per_impression;
-      // CORE INVARIANT: only credit when the advertiser's budget covers the cost.
-      if (ad.budget_remaining < cost) return send(res, 200, { success: true, credits_earned: 0, new_balance: balanceOf(s.uid) });
-      u.seenIdem.add(b.idempotency_key);
       const earned = b.event_type === "click" ? ad.reward_click : ad.reward_imp;
-      u.ledger.push({ amount: earned, reason: b.event_type, advertiser: ad.advertiser_name, event_type: b.event_type, at: new Date().toISOString() });
-      ad.budget_remaining = ad.budget_remaining - cost;
+      // CORE INVARIANT: only credit when the advertiser pays. On the unbilled
+      // side of a CPM/CPC campaign cost=reward=0 (logged, but no charge/credit).
+      if (cost > 0 && ad.budget_remaining < cost) return send(res, 200, { success: true, credits_earned: 0, new_balance: balanceOf(s.uid) });
+      u.seenIdem.add(b.idempotency_key);
+      if (earned > 0) u.ledger.push({ amount: earned, reason: b.event_type, advertiser: ad.advertiser_name, event_type: b.event_type, at: new Date().toISOString() });
+      if (cost > 0) ad.budget_remaining = ad.budget_remaining - cost;
       log(`track ${b.event_type} @${u.login} (+${earned}) → ${balanceOf(s.uid)}`);
       return send(res, 200, { success: true, credits_earned: earned, new_balance: balanceOf(s.uid) });
     }
@@ -312,6 +313,10 @@ const server = http.createServer(async (req, res) => {
         if (!text || text.length > 120) return send(res, 400, { error: "ad text required (<=120)" });
         if (!/^https?:\/\//.test(url)) return send(res, 400, { error: "valid URL required" });
         const verdict = moderateAdJs({ advertiser_name: name, text, url, description: b.description });
+        const model = b.billing_model === "cpc" ? "cpc" : "cpm";
+        const rates = model === "cpc"
+          ? { cost_per_impression: 0, cost_per_click: 0.30, reward_imp: 0, reward_click: 90 }
+          : { cost_per_impression: 0.01, cost_per_click: 0, reward_imp: 4, reward_click: 0 };
         const budget = Number(b.budget_remaining) || 0;
         // Fund approved campaigns from the wallet.
         if (verdict.ok && budget > 0) {
@@ -326,7 +331,10 @@ const server = http.createServer(async (req, res) => {
           weight: 1, active: verdict.ok, status: verdict.ok ? "approved" : "rejected",
           moderation_reason: verdict.ok ? null : verdict.reason,
           review_flag: verdict.ok ? (verdict.flag || null) : null,
-          budget_remaining: verdict.ok ? budget : 0, cost_per_impression: 0.01, cost_per_click: 0.2, reward_imp: 5, reward_click: 75,
+          billing_model: model,
+          budget_remaining: verdict.ok ? budget : 0,
+          cost_per_impression: rates.cost_per_impression, cost_per_click: rates.cost_per_click,
+          reward_imp: rates.reward_imp, reward_click: rates.reward_click,
         };
         ADS.push(ad);
         log(`advertiser campaign "${name}" → ${verdict.ok ? "APPROVED" : "REJECTED: " + verdict.reason}`);
@@ -406,7 +414,7 @@ const server = http.createServer(async (req, res) => {
       if (req.method === "POST") {
         const b = await readBody(req);
         if (!b.advertiser_name || !b.text || !/^https?:\/\//.test(b.url || "")) return send(res, 400, { error: "advertiser_name, text, http(s) url required" });
-        const ad = { ad_id: randomUUID(), advertiser_name: b.advertiser_name, text: b.text, url: b.url, description: b.description || "", brand_color: b.brand_color || null, logo_url: b.logo_url || null, weight: b.weight || 1, active: b.active !== false, status: "approved", budget_remaining: b.budget_remaining || 0, cost_per_impression: b.cost_per_impression || 0.01, cost_per_click: b.cost_per_click || 0.2, reward_imp: 5, reward_click: 75 };
+        const ad = { ad_id: randomUUID(), advertiser_name: b.advertiser_name, text: b.text, url: b.url, description: b.description || "", brand_color: b.brand_color || null, logo_url: b.logo_url || null, weight: b.weight || 1, active: b.active !== false, status: "approved", billing_model: "cpm", budget_remaining: b.budget_remaining || 0, cost_per_impression: b.cost_per_impression || 0.01, cost_per_click: 0, reward_imp: 4, reward_click: 0 };
         ADS.push(ad);
         log(`admin created ad ${ad.advertiser_name}`);
         return send(res, 200, { ad });
@@ -435,7 +443,7 @@ function advCampaignView(a) {
   const c = adsWithMetrics().find((m) => m.id === a.ad_id) || { impressions: 0, clicks: 0, spend: 0 };
   return {
     id: a.ad_id, advertiser_name: a.advertiser_name, text: a.text, url: a.url, description: a.description,
-    brand_color: a.brand_color, logo_url: a.logo_url, status: a.status, moderation_reason: a.moderation_reason || null, review_flag: a.review_flag || null,
+    brand_color: a.brand_color, logo_url: a.logo_url, billing_model: a.billing_model, status: a.status, moderation_reason: a.moderation_reason || null, review_flag: a.review_flag || null,
     active: a.active, weight: a.weight, budget_remaining: a.budget_remaining,
     cost_per_impression: a.cost_per_impression, cost_per_click: a.cost_per_click,
     impressions: c.impressions, clicks: c.clicks, spend: c.spend,

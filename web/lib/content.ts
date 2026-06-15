@@ -22,10 +22,10 @@ export const PRICING: {
   },
   {
     name: "Click (CPC)",
-    price: "$0.20",
+    price: "$0.30",
     unit: "per click",
-    blurb: "Pay only when an engaged developer clicks through to your site.",
-    features: ["Pay per click", "Dev-audience traffic", "Real-time metrics", "Cancel anytime"],
+    blurb: "Pay only when an engaged developer clicks through — impressions are free.",
+    features: ["Pay per click (impressions free)", "Dev-audience traffic", "Real-time metrics", "Cancel anytime"],
     highlight: false,
     cta: { label: "Start a campaign", kind: "portal" },
   },

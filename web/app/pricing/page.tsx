@@ -50,8 +50,9 @@ export default function PricingPage() {
           </div>
 
           <p className="mx-auto mt-10 max-w-2xl text-sm text-muted-foreground">
-            Developers earn ~45–55% of ad value as AI credits (1 credit = $0.001). The remaining
-            margin covers redemption and platform costs. See <Link href="/how-it-works" className="text-primary underline-offset-4 hover:underline">how it works</Link>.
+            Each campaign is billed <b>either</b> by impressions (CPM) <b>or</b> by clicks (CPC) — never both.
+            Developers earn AI credits on the billed event (~40% of impression value, ~30% of click
+            value; 1 credit = $0.001). See <Link href="/how-it-works" className="text-primary underline-offset-4 hover:underline">how it works</Link>.
           </p>
         </section>
       </main>
