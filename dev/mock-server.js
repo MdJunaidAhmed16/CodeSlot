@@ -49,7 +49,12 @@ const walletOf = (id) => advWallet.get(id) || 0;
 let mockOpenRouterSpent = 0; // running total of $ spent minting OpenRouter keys
 
 function userOf(id) {
-  if (!users.has(id)) users.set(id, { login: "dev", is_owner: DEV_OWNER, is_admin: true, ledger: [], seenIdem: new Set() });
+  if (!users.has(id)) users.set(id, {
+    login: "dev", is_owner: DEV_OWNER, is_admin: true, ledger: [], seenIdem: new Set(),
+    seenImpr: new Map(), // adId -> last impression time (ms), for click precondition
+    clickAt: new Map(),  // adId -> last credited click time (ms), per-ad cooldown
+    clickDay: { count: 0, day: "" }, // daily credited-click cap
+  });
   return users.get(id);
 }
 function balanceOf(id) {
@@ -217,9 +222,24 @@ const server = http.createServer(async (req, res) => {
       if (!ad || !ad.active) return send(res, 409, { error: "ad not available" });
       const cost = b.event_type === "click" ? ad.cost_per_click : ad.cost_per_impression;
       const earned = b.event_type === "click" ? ad.reward_click : ad.reward_imp;
+      const now = Date.now();
+      const zero = () => send(res, 200, { success: true, credits_earned: 0, new_balance: balanceOf(s.uid) });
       // CORE INVARIANT: only credit when the advertiser pays. On the unbilled
       // side of a CPM/CPC campaign cost=reward=0 (logged, but no charge/credit).
-      if (cost > 0 && ad.budget_remaining < cost) return send(res, 200, { success: true, credits_earned: 0, new_balance: balanceOf(s.uid) });
+      if (cost > 0 && ad.budget_remaining < cost) return zero();
+      // Record that this ad was viewed (for the click precondition).
+      if (b.event_type === "impression") u.seenImpr.set(ad.ad_id, now);
+      // CLICK anti-fraud (mirrors the real backend):
+      if (b.event_type === "click" && earned > 0) {
+        const seen = u.seenImpr.get(ad.ad_id) || 0;
+        if (now - seen > 30 * 60 * 1000) return zero();           // must have viewed it (<=30 min)
+        if (now - (u.clickAt.get(ad.ad_id) || 0) < 86400 * 1000) return zero(); // 1 credited click/ad/24h
+        const today = new Date().toISOString().slice(0, 10);
+        if (u.clickDay.day !== today) u.clickDay = { count: 0, day: today };
+        if (u.clickDay.count >= 10) return zero();                 // daily click cap
+        u.clickAt.set(ad.ad_id, now);
+        u.clickDay.count++;
+      }
       u.seenIdem.add(b.idempotency_key);
       if (earned > 0) u.ledger.push({ amount: earned, reason: b.event_type, advertiser: ad.advertiser_name, event_type: b.event_type, at: new Date().toISOString() });
       if (cost > 0) ad.budget_remaining = ad.budget_remaining - cost;

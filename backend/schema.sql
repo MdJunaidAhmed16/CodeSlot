@@ -224,6 +224,20 @@ begin
     raise exception 'ad not available';
   end if;
 
+  -- Anti-fraud: a paid click must follow a genuine view. Only credit a click
+  -- if this user actually had an impression of this ad in the last 30 minutes.
+  -- (Impressions are logged for CPC ads too, just with zero reward.)
+  if p_event = 'click' and v_reward > 0 then
+    if not exists (
+      select 1 from impressions
+      where user_id = p_user and ad_id = p_ad and event_type = 'impression'
+        and created_at > now() - interval '30 minutes'
+    ) then
+      return query select 0::numeric, current_balance(p_user);
+      return;
+    end if;
+  end if;
+
   -- CORE INVARIANT: a developer is only credited when a real advertiser pays
   -- for this event. If this event type carries a cost (the campaign's billed
   -- side) but the budget can't cover it, award nothing.

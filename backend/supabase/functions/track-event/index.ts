@@ -10,6 +10,9 @@ import { verifyRequest } from "../_shared/auth.ts";
 
 const IMPRESSION_COOLDOWN_SEC = 240; // max 1 credited impression / ad / 4 min
 const HOURLY_EVENT_LIMIT = 60; // total events per user per hour
+// Click anti-fraud: clicks are the highest-value event, so they're gated hard.
+const CLICK_COOLDOWN_SEC = 86_400; // max 1 credited click per ad per 24h
+const DAILY_CLICK_CREDIT_CAP = 10; // max credited clicks / user / 24h (all ads)
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return handleOptions();
@@ -43,18 +46,28 @@ Deno.serve(async (req) => {
 
   const db = serviceClient();
 
+  // Returns a "no credit" success response (the client still opens the link).
+  const noCredit = async () => {
+    const { data } = await db.rpc("current_balance", { p_user: userId });
+    return json({ success: true, credits_earned: 0, new_balance: Number(data) || 0 });
+  };
+
   if (eventType === "impression") {
-    const fresh = await firstWithin(
-      `freq:${userId}:${adId}`,
-      IMPRESSION_COOLDOWN_SEC
-    );
-    if (!fresh) {
-      const { data } = await db.rpc("current_balance", { p_user: userId });
-      return json({
-        success: true,
-        credits_earned: 0,
-        new_balance: Number(data) || 0,
-      });
+    // One credited impression per ad per 4 minutes.
+    if (!(await firstWithin(`freq:${userId}:${adId}`, IMPRESSION_COOLDOWN_SEC))) {
+      return noCredit();
+    }
+  } else {
+    // CLICK anti-fraud (server-authoritative; the client is never trusted):
+    //  1. at most one credited click per ad per 24h (blocks rapid re-clicking),
+    //  2. a daily cap on total credited clicks per user (blocks many-ad farming).
+    // (record_event additionally requires a recent impression of the ad, so you
+    //  can't earn a click on an ad you never actually viewed.)
+    if (!(await firstWithin(`clickcap:${userId}:${adId}`, CLICK_COOLDOWN_SEC))) {
+      return noCredit();
+    }
+    if (!(await allow(`clickday:${userId}`, DAILY_CLICK_CREDIT_CAP, 86_400))) {
+      return noCredit();
     }
   }
 
