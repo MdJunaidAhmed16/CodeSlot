@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PRICING } from "@/lib/content";
+import { PlanCta } from "@/components/plan-cta";
 import { Check } from "lucide-react";
 
 export const metadata = { title: "Pricing — CodeSlot" };
@@ -43,9 +43,7 @@ export default function PricingPage() {
                       </li>
                     ))}
                   </ul>
-                  <Button asChild className="mt-6 w-full" variant={tier.highlight ? "default" : "outline"}>
-                    <Link href="/login">Get started</Link>
-                  </Button>
+                  <PlanCta label={tier.cta.label} kind={tier.cta.kind} highlight={tier.highlight} />
                 </CardContent>
               </Card>
             ))}

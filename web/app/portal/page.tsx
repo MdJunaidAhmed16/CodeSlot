@@ -47,6 +47,20 @@ export default function PortalPage() {
       }
       setReady(true);
       await load();
+      // Came from a pricing "Start a campaign" CTA → jump to the form.
+      try {
+        if (localStorage.getItem("codeslot.intent") === "new-campaign") {
+          localStorage.removeItem("codeslot.intent");
+          setTimeout(() => {
+            const el = document.getElementById("new-campaign");
+            el?.scrollIntoView({ behavior: "smooth", block: "start" });
+            el?.classList.add("ring-2", "ring-primary");
+            setTimeout(() => el?.classList.remove("ring-2", "ring-primary"), 2000);
+          }, 150);
+        }
+      } catch {
+        /* ignore */
+      }
     })();
   }, [router, load]);
 
@@ -152,7 +166,7 @@ function NewCampaign({ wallet, onDone }: { wallet: number; onDone: () => Promise
   }
 
   return (
-    <Card className="h-fit">
+    <Card id="new-campaign" className="h-fit scroll-mt-24 transition-shadow">
       <CardHeader>
         <CardTitle className="flex items-center gap-2"><Plus className="h-5 w-5" /> New campaign</CardTitle>
         <CardDescription>Goes live instantly once it passes our automated safety review.</CardDescription>

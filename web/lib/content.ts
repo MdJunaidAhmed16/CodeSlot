@@ -1,6 +1,16 @@
 // Shared marketing copy & numbers (kept in sync with docs/06-UNIT-ECONOMICS.md).
 
-export const PRICING = [
+export type PlanCtaKind = "portal" | "contact";
+
+export const PRICING: {
+  name: string;
+  price: string;
+  unit: string;
+  blurb: string;
+  features: string[];
+  highlight: boolean;
+  cta: { label: string; kind: PlanCtaKind };
+}[] = [
   {
     name: "Status Bar",
     price: "$10",
@@ -8,6 +18,7 @@ export const PRICING = [
     blurb: "Your sponsored message in the VS Code status bar — seen while developers actively code.",
     features: ["1,000 impressions", "~0.5–1% CTR", "Brand color + logo", "Self-serve, auto-approved"],
     highlight: true,
+    cta: { label: "Start a campaign", kind: "portal" },
   },
   {
     name: "Click (CPC)",
@@ -16,6 +27,7 @@ export const PRICING = [
     blurb: "Pay only when an engaged developer clicks through to your site.",
     features: ["Pay per click", "Dev-audience traffic", "Real-time metrics", "Cancel anytime"],
     highlight: false,
+    cta: { label: "Start a campaign", kind: "portal" },
   },
   {
     name: "Sponsored",
@@ -24,6 +36,7 @@ export const PRICING = [
     blurb: "Guaranteed rotation share and premium placements for sustained campaigns.",
     features: ["Guaranteed share of voice", "Priority placement", "Dedicated support", "Invoiced billing"],
     highlight: false,
+    cta: { label: "Contact sales", kind: "contact" },
   },
 ];
 
