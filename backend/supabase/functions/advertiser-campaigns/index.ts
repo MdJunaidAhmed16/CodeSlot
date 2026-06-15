@@ -141,6 +141,100 @@ Deno.serve(async (req) => {
     });
   }
 
+  // ── Edit / pause-resume / top-up (re-moderates if content changes) ──
+  if (req.method === "PATCH") {
+    let body: Record<string, unknown>;
+    try {
+      body = await readJson(req);
+    } catch (e) {
+      return error(e instanceof Error ? e.message : "bad request", 400);
+    }
+    const id = body.id;
+    if (typeof id !== "string") return error("invalid id", 400);
+
+    // Ownership check.
+    const { data: ad } = await db
+      .from("ads").select("*").eq("id", id).eq("advertiser_id", advertiserId).single();
+    if (!ad) return error("campaign not found", 404);
+
+    const patch: Record<string, unknown> = {};
+    if (typeof body.active === "boolean") patch.active = body.active;
+    if (typeof body.text === "string") {
+      if (body.text.trim().length === 0 || body.text.length > 120) return error("ad text must be 1–120 chars", 400);
+      patch.text = body.text.trim();
+    }
+    if (typeof body.description === "string") patch.description = body.description.trim();
+    if (typeof body.url === "string") {
+      if (!isSafeHttpUrl(body.url)) return error("invalid url", 400);
+      patch.url = body.url.trim();
+    }
+    if (typeof body.brand_color === "string") patch.brand_color = HEX.test(body.brand_color) ? body.brand_color : null;
+    if (typeof body.logo_url === "string") patch.logo_url = /^https:\/\//.test(body.logo_url) ? body.logo_url : null;
+
+    // Re-moderate when the ad's content/destination changed.
+    const contentChanged = patch.text !== undefined || patch.url !== undefined || patch.description !== undefined;
+    if (contentChanged) {
+      const verdict = await moderateAd({
+        advertiser_name: ad.advertiser_name,
+        text: (patch.text as string) ?? ad.text,
+        description: (patch.description as string) ?? ad.description,
+        url: (patch.url as string) ?? ad.url,
+      });
+      if (!verdict.ok) {
+        patch.status = "rejected";
+        patch.active = false;
+        patch.moderation_reason = verdict.reason;
+        patch.review_flag = null;
+      } else {
+        patch.status = "approved";
+        patch.moderation_reason = null;
+        patch.review_flag = verdict.flag ?? null;
+        if (patch.active === undefined) patch.active = ad.active;
+      }
+    }
+
+    // Optional budget top-up from the wallet.
+    const addBudget = clampNum(body.add_budget, 0, MAX_BUDGET);
+    if (addBudget > 0) {
+      const { data: ok } = await db.rpc("spend_wallet", { p_advertiser: advertiserId, p_amount: addBudget });
+      if (ok !== true) return error("insufficient wallet balance", 402);
+      patch.budget_remaining = Number(ad.budget_remaining) + addBudget;
+    }
+
+    if (Object.keys(patch).length === 0) return error("nothing to update", 400);
+
+    const { data, error: e } = await db
+      .from("ads").update(patch).eq("id", id)
+      .select("id, status, moderation_reason, review_flag, active").single();
+    if (e) {
+      if (addBudget > 0) await db.rpc("add_wallet", { p_advertiser: advertiserId, p_amount: addBudget });
+      return error("could not update campaign", 500);
+    }
+    return json({ campaign: data, approved: patch.status !== "rejected", reason: (patch.moderation_reason as string) ?? null });
+  }
+
+  // ── Delete (refunds remaining budget to the wallet) ──
+  if (req.method === "DELETE") {
+    let body: Record<string, unknown>;
+    try {
+      body = await readJson(req);
+    } catch (e) {
+      return error(e instanceof Error ? e.message : "bad request", 400);
+    }
+    const id = body.id;
+    if (typeof id !== "string") return error("invalid id", 400);
+
+    const { data: ad } = await db
+      .from("ads").select("budget_remaining").eq("id", id).eq("advertiser_id", advertiserId).single();
+    if (!ad) return error("campaign not found", 404);
+
+    const refund = Number(ad.budget_remaining) || 0;
+    const { error: delErr } = await db.from("ads").delete().eq("id", id);
+    if (delErr) return error("could not delete campaign", 500);
+    if (refund > 0) await db.rpc("add_wallet", { p_advertiser: advertiserId, p_amount: refund });
+    return json({ success: true, refunded: refund });
+  }
+
   return error("method not allowed", 405);
 });
 

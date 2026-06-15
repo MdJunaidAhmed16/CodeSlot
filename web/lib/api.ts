@@ -19,6 +19,7 @@ export interface Campaign {
   logo_url?: string | null;
   status: "approved" | "rejected" | "pending" | "paused";
   moderation_reason?: string | null;
+  review_flag?: string | null;
   active: boolean;
   billing_model?: "cpm" | "cpc";
   budget_remaining: number;
@@ -137,6 +138,26 @@ export const submitCampaign = (input: SubmitInput) =>
     "advertiser-campaigns",
     { method: "POST", body: JSON.stringify(input) }
   );
+
+export interface CampaignEdit {
+  text?: string;
+  description?: string;
+  url?: string;
+  active?: boolean;
+  add_budget?: number;
+}
+
+export const patchCampaign = (id: string, edit: CampaignEdit) =>
+  call<{ campaign: Campaign; approved: boolean; reason: string | null }>(
+    "advertiser-campaigns",
+    { method: "PATCH", body: JSON.stringify({ id, ...edit }) }
+  );
+
+export const deleteCampaign = (id: string) =>
+  call<{ success: boolean; refunded: number }>("advertiser-campaigns", {
+    method: "DELETE",
+    body: JSON.stringify({ id }),
+  });
 
 export type Currency = "usd" | "inr";
 

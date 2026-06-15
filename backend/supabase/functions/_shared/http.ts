@@ -4,7 +4,7 @@
 // tight allowlist costs nothing and blocks casual cross-origin probing.
 export const CORS_HEADERS: Record<string, string> = {
   "access-control-allow-origin": "*",
-  "access-control-allow-methods": "GET, POST, PATCH, OPTIONS",
+  "access-control-allow-methods": "GET, POST, PATCH, DELETE, OPTIONS",
   // `authorization` is required so the browser preflight allows the Bearer
   // token the dashboards/portal send; `apikey` covers Supabase-Auth fetches.
   "access-control-allow-headers": "authorization, apikey, content-type, x-codeslot-version",

@@ -90,7 +90,7 @@ function send(res, status, body) {
   res.writeHead(status, {
     "content-type": "application/json",
     "access-control-allow-origin": "*",
-    "access-control-allow-methods": "GET, POST, PATCH, OPTIONS",
+    "access-control-allow-methods": "GET, POST, PATCH, DELETE, OPTIONS",
     "access-control-allow-headers": "content-type, authorization, x-codeslot-version",
   });
   res.end(JSON.stringify(body));
@@ -181,7 +181,7 @@ const server = http.createServer(async (req, res) => {
   if (req.method === "OPTIONS") {
     res.writeHead(204, {
       "access-control-allow-origin": "*",
-      "access-control-allow-methods": "GET, POST, PATCH, OPTIONS",
+      "access-control-allow-methods": "GET, POST, PATCH, DELETE, OPTIONS",
       "access-control-allow-headers": "content-type, authorization, x-codeslot-version",
     });
     return res.end();
@@ -382,6 +382,38 @@ const server = http.createServer(async (req, res) => {
         ADS.push(ad);
         log(`advertiser campaign "${name}" → ${verdict.ok ? "APPROVED" : "REJECTED: " + verdict.reason}`);
         return send(res, 200, { campaign: advCampaignView(ad), approved: verdict.ok, reason: verdict.ok ? null : verdict.reason });
+      }
+      if (req.method === "PATCH") {
+        const b = await readBody(req);
+        const ad = ADS.find((a) => a.ad_id === b.id && a.advertiser_id === sess.advertiserId);
+        if (!ad) return send(res, 404, { error: "campaign not found" });
+        if (typeof b.active === "boolean") ad.active = b.active;
+        if (typeof b.text === "string") ad.text = b.text.trim();
+        if (typeof b.description === "string") ad.description = b.description.trim();
+        if (typeof b.url === "string") ad.url = b.url.trim();
+        const changed = b.text !== undefined || b.url !== undefined || b.description !== undefined;
+        if (changed) {
+          const v = moderateAdJs({ advertiser_name: ad.advertiser_name, text: ad.text, url: ad.url, description: ad.description });
+          if (!v.ok) { ad.status = "rejected"; ad.active = false; ad.moderation_reason = v.reason; ad.review_flag = null; }
+          else { ad.status = "approved"; ad.moderation_reason = null; ad.review_flag = v.flag || null; }
+        }
+        const addBudget = Number(b.add_budget) || 0;
+        if (addBudget > 0) {
+          if (walletOf(sess.advertiserId) < addBudget) return send(res, 402, { error: "insufficient wallet balance" });
+          advWallet.set(sess.advertiserId, walletOf(sess.advertiserId) - addBudget);
+          ad.budget_remaining += addBudget;
+        }
+        return send(res, 200, { campaign: advCampaignView(ad), approved: ad.status !== "rejected", reason: ad.moderation_reason || null });
+      }
+      if (req.method === "DELETE") {
+        const b = await readBody(req);
+        const idx = ADS.findIndex((a) => a.ad_id === b.id && a.advertiser_id === sess.advertiserId);
+        if (idx < 0) return send(res, 404, { error: "campaign not found" });
+        const refund = ADS[idx].budget_remaining || 0;
+        ADS.splice(idx, 1);
+        if (refund > 0) advWallet.set(sess.advertiserId, walletOf(sess.advertiserId) + refund);
+        log(`campaign deleted, refunded $${refund}`);
+        return send(res, 200, { success: true, refunded: refund });
       }
     }
     // /advertiser-account — profile + delete (dev auth)

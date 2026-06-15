@@ -11,14 +11,17 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import {
   type Campaign, type Currency, type BillingModel, RATES, listCampaigns, submitCampaign,
-  isSignedIn, devSignOut, devEmail, createPayment, setCurrencyPref,
+  patchCampaign, deleteCampaign, isSignedIn, devSignOut, devEmail, createPayment, setCurrencyPref,
 } from "@/lib/api";
 import { getSupabase, supabaseConfigured } from "@/lib/supabase";
 import { openRazorpay } from "@/lib/razorpay";
 import { uploadLogo } from "@/lib/storage";
 import { fmt, symbol, toUsd, fetchLiveRate } from "@/lib/currency";
 import { ProfileMenu } from "@/components/profile-menu";
-import { CheckCircle2, XCircle, ExternalLink, Plus, LogOut, Wallet, Upload, ImageIcon, Lock } from "lucide-react";
+import {
+  CheckCircle2, XCircle, ExternalLink, Plus, LogOut, Wallet, Upload, ImageIcon, Lock,
+  Pause, Play, Pencil, Trash2,
+} from "lucide-react";
 
 const LOCK_MS = 30 * 24 * 60 * 60 * 1000;
 
@@ -123,7 +126,7 @@ export default function PortalPage() {
               <Card><CardContent className="py-12 text-center text-sm text-muted-foreground">No campaigns yet. Create your first one →</CardContent></Card>
             ) : (
               <div className="space-y-3">
-                {campaigns.map((c) => <CampaignRow key={c.id} c={c} />)}
+                {campaigns.map((c) => <CampaignRow key={c.id} c={c} wallet={wallet} currency={currency} rate={rate} onChanged={load} />)}
               </div>
             )}
           </div>
@@ -439,29 +442,147 @@ function AddFundsDialog({ onClose, onDone, pref, rate, canChange }: {
   );
 }
 
-function CampaignRow({ c }: { c: Campaign }) {
+function CampaignRow({ c, wallet, currency, rate, onChanged }: {
+  c: Campaign; wallet: number; currency: Currency; rate: number; onChanged: () => Promise<void>;
+}) {
+  const [busy, setBusy] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  async function toggle() {
+    setBusy(true); setErr(null);
+    try { await patchCampaign(c.id, { active: !c.active }); await onChanged(); }
+    catch (e) { setErr(e instanceof Error ? e.message : "Failed"); }
+    finally { setBusy(false); }
+  }
+  async function remove() {
+    setBusy(true); setErr(null);
+    try { await deleteCampaign(c.id); await onChanged(); }
+    catch (e) { setErr(e instanceof Error ? e.message : "Failed"); setBusy(false); }
+  }
+
   return (
     <Card>
-      <CardContent className="flex items-center justify-between gap-4 py-4">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="font-semibold">{c.advertiser_name}</span>
-            <StatusBadge c={c} />
+      <CardContent className="py-4">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="font-semibold">{c.advertiser_name}</span>
+              <StatusBadge c={c} />
+              {c.billing_model && <Badge variant="outline" className="uppercase">{c.billing_model}</Badge>}
+            </div>
+            <p className="truncate text-sm text-muted-foreground">{c.text}</p>
+            {c.status === "rejected" && c.moderation_reason && (
+              <p className="mt-1 text-xs text-destructive">{c.moderation_reason}</p>
+            )}
+            {c.review_flag && <p className="mt-1 text-xs text-amber-500">⚠ {c.review_flag}</p>}
+            <a href={c.url} target="_blank" rel="noreferrer" className="mt-1 inline-flex items-center gap-1 text-xs text-primary hover:underline">
+              {c.url} <ExternalLink className="h-3 w-3" />
+            </a>
           </div>
-          <p className="truncate text-sm text-muted-foreground">{c.text}</p>
-          {c.status === "rejected" && c.moderation_reason && (
-            <p className="mt-1 text-xs text-destructive">{c.moderation_reason}</p>
-          )}
-          <a href={c.url} target="_blank" rel="noreferrer" className="mt-1 inline-flex items-center gap-1 text-xs text-primary hover:underline">
-            {c.url} <ExternalLink className="h-3 w-3" />
-          </a>
+          <div className="shrink-0 text-right text-sm">
+            <div className="font-mono">{(c.impressions ?? 0).toLocaleString()} impr · {(c.clicks ?? 0).toLocaleString()} clk</div>
+            <div className="text-muted-foreground">{fmt(c.budget_remaining ?? 0, currency, rate)} left</div>
+          </div>
         </div>
-        <div className="shrink-0 text-right text-sm">
-          <div className="font-mono">{(c.impressions ?? 0).toLocaleString()} impr · {(c.clicks ?? 0).toLocaleString()} clk</div>
-          <div className="text-muted-foreground">${(c.budget_remaining ?? 0).toFixed(2)} left</div>
+
+        <div className="mt-3 flex flex-wrap items-center gap-1 border-t pt-2">
+          <Button variant="ghost" size="sm" disabled={busy || c.status === "rejected"} onClick={() => void toggle()}>
+            {c.active ? <><Pause className="h-4 w-4" /> Pause</> : <><Play className="h-4 w-4" /> Resume</>}
+          </Button>
+          <Button variant="ghost" size="sm" disabled={busy} onClick={() => setEditing(true)}>
+            <Pencil className="h-4 w-4" /> Edit
+          </Button>
+          <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" disabled={busy} onClick={() => setConfirming(true)}>
+            <Trash2 className="h-4 w-4" /> Delete
+          </Button>
+          {err && <span className="text-xs text-destructive">{err}</span>}
         </div>
+
+        {confirming && (
+          <div className="mt-2 flex flex-wrap items-center justify-between gap-2 rounded-md bg-destructive/10 p-2 text-xs">
+            <span>Delete this campaign? Any remaining budget is refunded to your wallet.</span>
+            <span className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={() => setConfirming(false)}>Cancel</Button>
+              <Button variant="destructive" size="sm" disabled={busy} onClick={() => void remove()}>Delete</Button>
+            </span>
+          </div>
+        )}
       </CardContent>
+
+      {editing && (
+        <EditCampaignDialog c={c} wallet={wallet} currency={currency} rate={rate}
+          onClose={() => setEditing(false)} onDone={onChanged} />
+      )}
     </Card>
+  );
+}
+
+function EditCampaignDialog({ c, wallet, currency, rate, onClose, onDone }: {
+  c: Campaign; wallet: number; currency: Currency; rate: number;
+  onClose: () => void; onDone: () => Promise<void>;
+}) {
+  const [text, setText] = useState(c.text);
+  const [description, setDescription] = useState(c.description ?? "");
+  const [url, setUrl] = useState(c.url);
+  const [addBudget, setAddBudget] = useState("0");
+  const [busy, setBusy] = useState(false);
+  const [result, setResult] = useState<{ ok: boolean; msg: string } | null>(null);
+
+  const addUsd = toUsd(Number(addBudget) || 0, currency, rate);
+
+  async function save() {
+    if (addUsd > wallet) { setResult({ ok: false, msg: "Top-up exceeds wallet balance." }); return; }
+    setBusy(true); setResult(null);
+    try {
+      const r = await patchCampaign(c.id, {
+        text, description: description || undefined, url,
+        add_budget: addUsd > 0 ? addUsd : undefined,
+      });
+      if (r.approved) {
+        setResult({ ok: true, msg: "Saved." });
+        await onDone();
+        setTimeout(onClose, 600);
+      } else {
+        setResult({ ok: false, msg: r.reason ?? "Rejected by automated review — campaign paused." });
+        await onDone();
+      }
+    } catch (e) {
+      setResult({ ok: false, msg: e instanceof Error ? e.message : "Update failed" });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
+      <Card className="w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+        <CardHeader>
+          <CardTitle>Edit campaign</CardTitle>
+          <CardDescription>Changing the text or URL re-runs the safety review.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <Field label="Ad text (max 120 chars)"><Input maxLength={120} value={text} onChange={(e) => setText(e.target.value)} /></Field>
+          <Field label="Destination URL"><Input type="url" value={url} onChange={(e) => setUrl(e.target.value)} /></Field>
+          <Field label="Description"><Textarea value={description} onChange={(e) => setDescription(e.target.value)} /></Field>
+          <Field label={`Add budget (${symbol(currency)})`}>
+            <Input type="number" min={0} value={addBudget} onChange={(e) => setAddBudget(e.target.value)} />
+            <p className="text-xs text-muted-foreground">Wallet: {fmt(wallet, currency, rate)} available</p>
+          </Field>
+          {result && (
+            <div className={`flex items-start gap-2 rounded-md p-2 text-sm ${result.ok ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-destructive/10 text-destructive"}`}>
+              {result.ok ? <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" /> : <XCircle className="mt-0.5 h-4 w-4 shrink-0" />}
+              <span>{result.msg}</span>
+            </div>
+          )}
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={onClose}>Close</Button>
+            <Button disabled={busy} onClick={() => void save()}>{busy ? "Saving…" : "Save changes"}</Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
 
