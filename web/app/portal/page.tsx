@@ -11,11 +11,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import {
   type Campaign, type Currency, type BillingModel, RATES, listCampaigns, submitCampaign,
-  isSignedIn, devSignOut, devEmail, createPayment, guessCurrency,
+  isSignedIn, devSignOut, devEmail, createPayment,
 } from "@/lib/api";
 import { getSupabase, supabaseConfigured } from "@/lib/supabase";
 import { openRazorpay } from "@/lib/razorpay";
 import { uploadLogo } from "@/lib/storage";
+import { useCurrency, fmt, symbol, toUsd } from "@/lib/currency";
 import { ProfileMenu } from "@/components/profile-menu";
 import { CheckCircle2, XCircle, ExternalLink, Plus, LogOut, Wallet, Upload, ImageIcon } from "lucide-react";
 
@@ -110,6 +111,7 @@ export default function PortalPage() {
 }
 
 function NewCampaign({ wallet, onDone }: { wallet: number; onDone: () => Promise<void> }) {
+  const [currency] = useCurrency();
   const [form, setForm] = useState({ advertiser_name: "", text: "", url: "", description: "", budget_remaining: "50" });
   const [billing, setBilling] = useState<BillingModel>("cpm");
   const [useColor, setUseColor] = useState(false);
@@ -150,7 +152,7 @@ function NewCampaign({ wallet, onDone }: { wallet: number; onDone: () => Promise
         brand_color: useColor ? brandColor : undefined,
         logo_url: logoUrl || undefined,
         billing_model: billing,
-        budget_remaining: Number(form.budget_remaining) || 0,
+        budget_remaining: toUsd(Number(form.budget_remaining) || 0, currency),
       });
       if (r.approved) {
         setResult({ ok: true, msg: "Approved and live! 🎉" });
@@ -166,6 +168,8 @@ function NewCampaign({ wallet, onDone }: { wallet: number; onDone: () => Promise
       setBusy(false);
     }
   }
+
+  const budgetUsd = toUsd(Number(form.budget_remaining) || 0, currency);
 
   return (
     <Card id="new-campaign" className="h-fit scroll-mt-24 transition-shadow">
@@ -243,17 +247,17 @@ function NewCampaign({ wallet, onDone }: { wallet: number; onDone: () => Promise
             </p>
           </div>
 
-          <Field label="Budget (USD)">
+          <Field label={`Budget (${symbol(currency)})`}>
             <Input type="number" min={0} value={form.budget_remaining} onChange={set("budget_remaining")} />
             <p className="text-xs text-muted-foreground">
-              Drawn from your wallet (${wallet.toFixed(2)} available) ·{" "}
+              Drawn from your wallet ({fmt(wallet, currency)} available) ·{" "}
               {billing === "cpm"
-                ? `≈ ${Math.round((Number(form.budget_remaining) || 0) / RATES.cpm.costPerImpression).toLocaleString()} impressions`
-                : `≈ ${Math.round((Number(form.budget_remaining) || 0) / RATES.cpc.costPerClick).toLocaleString()} clicks`}
+                ? `≈ ${Math.round(budgetUsd / RATES.cpm.costPerImpression).toLocaleString()} impressions`
+                : `≈ ${Math.round(budgetUsd / RATES.cpc.costPerClick).toLocaleString()} clicks`}
             </p>
           </Field>
-          <Button type="submit" className="w-full" disabled={busy || Number(form.budget_remaining) > wallet}>
-            {busy ? "Reviewing…" : Number(form.budget_remaining) > wallet ? "Add funds to launch" : "Submit campaign"}
+          <Button type="submit" className="w-full" disabled={busy || budgetUsd > wallet}>
+            {busy ? "Reviewing…" : budgetUsd > wallet ? "Add funds to launch" : "Submit campaign"}
           </Button>
           {result && (
             <div className={`flex items-start gap-2 rounded-md p-3 text-sm ${result.ok ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-destructive/10 text-destructive"}`}>
@@ -305,6 +309,7 @@ function PreviewBar({ bg, defaultText, label, text, color }: { bg: string; defau
 
 function WalletPanel({ wallet, onTopUp }: { wallet: number; onTopUp: () => Promise<void> }) {
   const [open, setOpen] = useState(false);
+  const [currency] = useCurrency();
   return (
     <Card>
       <CardHeader>
@@ -312,7 +317,7 @@ function WalletPanel({ wallet, onTopUp }: { wallet: number; onTopUp: () => Promi
         <CardDescription>Prepaid balance used to fund campaigns.</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="text-3xl font-bold">${wallet.toFixed(2)}</div>
+        <div className="text-3xl font-bold">{fmt(wallet, currency)}</div>
         <Button className="mt-4 w-full" onClick={() => setOpen(true)}><Plus className="h-4 w-4" /> Add funds</Button>
         {open && <AddFundsDialog onClose={() => setOpen(false)} onDone={onTopUp} />}
       </CardContent>
@@ -321,7 +326,8 @@ function WalletPanel({ wallet, onTopUp }: { wallet: number; onTopUp: () => Promi
 }
 
 function AddFundsDialog({ onClose, onDone }: { onClose: () => void; onDone: () => Promise<void> }) {
-  const [currency, setCurrency] = useState<Currency>(guessCurrency());
+  const [pref] = useCurrency();
+  const [currency, setCurrency] = useState<Currency>(pref);
   const [amount, setAmount] = useState(currency === "inr" ? "4150" : "50");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);

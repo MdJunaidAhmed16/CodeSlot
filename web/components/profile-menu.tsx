@@ -5,8 +5,9 @@ import { useRouter } from "next/navigation";
 import { type Account, getAccount, deleteAccount, devSignOut } from "@/lib/api";
 import { getSupabase, supabaseConfigured } from "@/lib/supabase";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { useCurrency, fmt } from "@/lib/currency";
 import { Button } from "@/components/ui/button";
-import { LogOut, Trash2, ChevronDown } from "lucide-react";
+import { LogOut, Trash2, ChevronDown, Coins } from "lucide-react";
 
 export function ProfileMenu({ email }: { email: string | null }) {
   const router = useRouter();
@@ -15,6 +16,7 @@ export function ProfileMenu({ email }: { email: string | null }) {
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
   const [delErr, setDelErr] = useState<string | null>(null);
+  const [currency, setCur] = useCurrency();
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -76,12 +78,19 @@ export function ProfileMenu({ email }: { email: string | null }) {
           </div>
 
           <div className="my-1 grid grid-cols-2 gap-2 px-2">
-            <Stat label="Wallet" value={account ? "$" + account.wallet_usd.toFixed(2) : "—"} />
+            <Stat label="Wallet" value={account ? fmt(account.wallet_usd, currency) : "—"} />
             <Stat label="Campaigns" value={account ? String(account.campaigns) : "—"} />
           </div>
 
           <div className="my-1 border-t" />
           <ThemeToggle />
+          <div className="flex items-center justify-between px-2 py-1.5 text-sm">
+            <span className="flex items-center gap-2"><Coins className="h-4 w-4" /> Currency</span>
+            <span className="flex overflow-hidden rounded-md border text-xs">
+              <button onClick={() => setCur("usd")} className={"px-2 py-1 " + (currency === "usd" ? "bg-primary text-primary-foreground" : "")}>$ USD</button>
+              <button onClick={() => setCur("inr")} className={"px-2 py-1 " + (currency === "inr" ? "bg-primary text-primary-foreground" : "")}>₹ INR</button>
+            </span>
+          </div>
           <div className="my-1 border-t" />
 
           {!confirming ? (
