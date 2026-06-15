@@ -5,19 +5,41 @@ import { useRouter } from "next/navigation";
 import { type Account, getAccount, deleteAccount, devSignOut } from "@/lib/api";
 import { getSupabase, supabaseConfigured } from "@/lib/supabase";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { useCurrency, fmt } from "@/lib/currency";
+import { type Currency, fmt } from "@/lib/currency";
 import { Button } from "@/components/ui/button";
-import { LogOut, Trash2, ChevronDown, Coins } from "lucide-react";
+import { LogOut, Trash2, ChevronDown, Coins, Lock } from "lucide-react";
 
-export function ProfileMenu({ email }: { email: string | null }) {
+export function ProfileMenu({ email, currency, rate, pref, canChange, lockedUntil, onSetCurrency }: {
+  email: string | null;
+  currency: Currency;
+  rate: number;
+  pref: Currency | null;
+  canChange: boolean;
+  lockedUntil: Date | null;
+  onSetCurrency: (c: Currency) => Promise<void>;
+}) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [account, setAccount] = useState<Account | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
   const [delErr, setDelErr] = useState<string | null>(null);
-  const [currency, setCur] = useCurrency();
+  const [busyCur, setBusyCur] = useState(false);
+  const [curErr, setCurErr] = useState<string | null>(null);
   const ref = useRef<HTMLDivElement>(null);
+
+  async function setCurrency(c: Currency) {
+    if (c === currency || !canChange) return;
+    setBusyCur(true);
+    setCurErr(null);
+    try {
+      await onSetCurrency(c);
+    } catch (e) {
+      setCurErr(e instanceof Error ? e.message : "Could not change currency.");
+    } finally {
+      setBusyCur(false);
+    }
+  }
 
   useEffect(() => {
     function onClick(e: MouseEvent) {
@@ -81,18 +103,41 @@ export function ProfileMenu({ email }: { email: string | null }) {
           </div>
 
           <div className="my-1 grid grid-cols-2 gap-2 px-2">
-            <Stat label="Wallet" value={account ? fmt(account.wallet_usd, currency) : "—"} />
+            <Stat label="Wallet" value={account ? fmt(account.wallet_usd, currency, rate) : "—"} />
             <Stat label="Campaigns" value={account ? String(account.campaigns) : "—"} />
           </div>
 
           <div className="my-1 border-t" />
           <ThemeToggle />
-          <div className="flex items-center justify-between px-2 py-1.5 text-sm">
-            <span className="flex items-center gap-2"><Coins className="h-4 w-4" /> Currency</span>
-            <span className="flex overflow-hidden rounded-md border text-xs">
-              <button onClick={() => setCur("usd")} className={"px-2 py-1 " + (currency === "usd" ? "bg-primary text-primary-foreground" : "")}>$ USD</button>
-              <button onClick={() => setCur("inr")} className={"px-2 py-1 " + (currency === "inr" ? "bg-primary text-primary-foreground" : "")}>₹ INR</button>
-            </span>
+          <div className="px-2 py-1.5 text-sm">
+            <div className="flex items-center justify-between">
+              <span className="flex items-center gap-2"><Coins className="h-4 w-4" /> Billing currency</span>
+              <span className="flex overflow-hidden rounded-md border text-xs">
+                {(["usd", "inr"] as const).map((c) => (
+                  <button key={c} disabled={!canChange || busyCur}
+                    onClick={() => void setCurrency(c)}
+                    className={
+                      "px-2 py-1 disabled:opacity-60 " +
+                      (currency === c ? "bg-primary text-primary-foreground" : "") +
+                      (!canChange && currency !== c ? " hidden" : "")
+                    }>
+                    {c === "usd" ? "$ USD" : "₹ INR"}
+                  </button>
+                ))}
+              </span>
+            </div>
+            <p className="mt-1 flex items-start gap-1 text-xs text-muted-foreground">
+              {!canChange && pref ? (
+                <>
+                  <Lock className="mt-0.5 h-3 w-3 shrink-0" />
+                  Locked at $1 = ₹{rate.toFixed(2)} until {lockedUntil?.toISOString().slice(0, 10)}.
+                  We freeze your currency &amp; rate for 30 days so your balance stays consistent.
+                </>
+              ) : (
+                <>Choosing locks your billing currency &amp; today&apos;s exchange rate for 30 days.</>
+              )}
+            </p>
+            {curErr && <p className="mt-1 text-xs text-destructive">{curErr}</p>}
           </div>
           <div className="my-1 border-t" />
 

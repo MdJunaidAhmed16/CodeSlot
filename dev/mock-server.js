@@ -44,6 +44,11 @@ const advByEmail = new Map();
 const advWallet = new Map();
 /** advertiserId -> [payment] */
 const advPayments = new Map();
+/** advertiserId -> { currency_pref, set_at(ms), fx_rate_locked } */
+const advProfile = new Map();
+const LOCK_MS = 30 * 24 * 3600 * 1000;
+const profileOf = (id) => { if (!advProfile.has(id)) advProfile.set(id, { currency_pref: null, set_at: null, fx_rate_locked: null }); return advProfile.get(id); };
+const canChangeCurrency = (p) => !p.set_at || Date.now() - p.set_at >= LOCK_MS;
 let USD_INR_RATE = 83; // fallback; refreshed live from frankfurter
 let fxAt = 0;
 async function getMockRate() {
@@ -331,10 +336,14 @@ const server = http.createServer(async (req, res) => {
       const sess = tok && advSessions.get(tok);
       if (!sess) return send(res, 401, { error: "authentication required" });
       if (req.method === "GET") {
+        const pp = profileOf(sess.advertiserId);
         return send(res, 200, {
           campaigns: ADS.filter((a) => a.advertiser_id === sess.advertiserId).map(advCampaignView),
           wallet_usd: walletOf(sess.advertiserId),
           email: sess.email,
+          currency_pref: pp.currency_pref,
+          currency_pref_set_at: pp.set_at ? new Date(pp.set_at).toISOString() : null,
+          fx_rate_locked: pp.fx_rate_locked,
           payments: (advPayments.get(sess.advertiserId) || []).slice(-10).reverse(),
         });
       }
@@ -382,20 +391,37 @@ const server = http.createServer(async (req, res) => {
       const sess = tok && advSessions.get(tok);
       if (!sess) return send(res, 401, { error: "authentication required" });
       if (req.method === "GET") {
+        const p = profileOf(sess.advertiserId);
         return send(res, 200, {
           email: sess.email, name: sess.email.split("@")[0], provider: "email",
           wallet_usd: walletOf(sess.advertiserId),
           campaigns: ADS.filter((a) => a.advertiser_id === sess.advertiserId).length,
           created_at: new Date().toISOString(),
+          currency_pref: p.currency_pref,
+          currency_pref_set_at: p.set_at ? new Date(p.set_at).toISOString() : null,
+          fx_rate_locked: p.fx_rate_locked,
+          currency_locked_days: 30,
+          can_change_currency: canChangeCurrency(p),
         });
       }
       if (req.method === "POST") {
         const b = await readBody(req);
+        if (b.action === "set_currency") {
+          if (b.currency !== "usd" && b.currency !== "inr") return send(res, 400, { error: "invalid currency" });
+          const p = profileOf(sess.advertiserId);
+          if (!canChangeCurrency(p)) {
+            const until = new Date(p.set_at + LOCK_MS).toISOString().slice(0, 10);
+            return send(res, 409, { error: `currency is locked until ${until}` });
+          }
+          p.currency_pref = b.currency; p.set_at = Date.now(); p.fx_rate_locked = await getMockRate();
+          return send(res, 200, { currency_pref: p.currency_pref, fx_rate_locked: p.fx_rate_locked, can_change_currency: false });
+        }
         if (b.action !== "delete") return send(res, 400, { error: "unknown action" });
         // Remove the advertiser's campaigns, wallet, payments, session.
         for (let i = ADS.length - 1; i >= 0; i--) if (ADS[i].advertiser_id === sess.advertiserId) ADS.splice(i, 1);
         advWallet.delete(sess.advertiserId);
         advPayments.delete(sess.advertiserId);
+        advProfile.delete(sess.advertiserId);
         advByEmail.delete(sess.email);
         advSessions.delete(tok);
         log(`advertiser account deleted: ${sess.email}`);
@@ -411,9 +437,19 @@ const server = http.createServer(async (req, res) => {
       const b = await readBody(req);
       const amount = Number(b.amount);
       if (!isFinite(amount) || amount <= 0) return send(res, 400, { error: "invalid amount" });
-      const currency = b.currency === "inr" || b.currency === "usd" ? b.currency
+      const requested = b.currency === "inr" || b.currency === "usd" ? b.currency
         : (String(b.country || "").toUpperCase() === "IN" ? "inr" : "usd");
-      const rate = await getMockRate();
+      // Honor / set the locked currency + frozen rate.
+      const p = profileOf(sess.advertiserId);
+      let currency, rate;
+      if (p.currency_pref) {
+        currency = p.currency_pref;
+        if (requested !== currency) return send(res, 409, { error: `your billing currency is locked to ${currency.toUpperCase()}` });
+        rate = p.fx_rate_locked || (await getMockRate());
+      } else {
+        currency = requested; rate = await getMockRate();
+        p.currency_pref = currency; p.set_at = Date.now(); p.fx_rate_locked = rate;
+      }
       const amountUsd = Math.round((currency === "inr" ? amount / rate : amount) * 100) / 100;
       if (amountUsd < 5) return send(res, 400, { error: "minimum top-up is $5" });
       // USD prefers Stripe, but falls back to Razorpay (International) when

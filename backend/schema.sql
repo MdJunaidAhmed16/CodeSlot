@@ -30,6 +30,12 @@ create table if not exists advertisers (
   -- Prepaid balance in USD (the platform's base currency). Topped up via
   -- Stripe (USD) or Razorpay (INR→USD); campaign budgets are drawn from it.
   wallet_usd    numeric not null default 0 check (wallet_usd >= 0),
+  -- Billing currency preference, locked for 30 days once chosen. The USD↔INR
+  -- rate is frozen at selection time so the displayed balance never drifts and
+  -- conversions stay consistent for the period.
+  currency_pref text check (currency_pref in ('usd','inr')),
+  currency_pref_set_at timestamptz,
+  fx_rate_locked numeric,   -- USD→INR rate frozen when the pref is chosen
   banned        boolean not null default false,
   created_at    timestamptz not null default now(),
   last_seen_at  timestamptz not null default now()

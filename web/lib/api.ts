@@ -118,8 +118,17 @@ export interface PortalData {
   campaigns: Campaign[];
   wallet_usd: number;
   email: string | null;
+  currency_pref: "usd" | "inr" | null;
+  currency_pref_set_at: string | null;
+  fx_rate_locked: number | null;
   payments: Payment[];
 }
+
+export const setCurrencyPref = (currency: "usd" | "inr") =>
+  call<{ currency_pref: string; fx_rate_locked: number | null; can_change_currency: boolean }>(
+    "advertiser-account",
+    { method: "POST", body: JSON.stringify({ action: "set_currency", currency }) }
+  );
 
 export const listCampaigns = () => call<PortalData>("advertiser-campaigns");
 

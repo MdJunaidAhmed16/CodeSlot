@@ -27,9 +27,12 @@ Deno.serve(async (req) => {
       .order("created_at", { ascending: false });
     if (e) return error("could not load campaigns", 500);
 
-    // Include the wallet balance + recent top-ups for the portal.
+    // Include the wallet balance + currency lock + recent top-ups for the portal.
     const { data: adv } = await db
-      .from("advertisers").select("wallet_usd, email, name").eq("id", advertiserId).single();
+      .from("advertisers")
+      .select("wallet_usd, email, name, currency_pref, currency_pref_set_at, fx_rate_locked")
+      .eq("id", advertiserId)
+      .single();
     const { data: payments } = await db
       .from("payments")
       .select("provider, currency, amount_minor, amount_usd, status, created_at")
@@ -41,6 +44,9 @@ Deno.serve(async (req) => {
       campaigns: data ?? [],
       wallet_usd: Number(adv?.wallet_usd ?? 0),
       email: adv?.email ?? null,
+      currency_pref: adv?.currency_pref ?? null,
+      currency_pref_set_at: adv?.currency_pref_set_at ?? null,
+      fx_rate_locked: adv?.fx_rate_locked != null ? Number(adv.fx_rate_locked) : null,
       payments: payments ?? [],
     });
   }

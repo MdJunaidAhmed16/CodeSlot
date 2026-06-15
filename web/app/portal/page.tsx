@@ -11,14 +11,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import {
   type Campaign, type Currency, type BillingModel, RATES, listCampaigns, submitCampaign,
-  isSignedIn, devSignOut, devEmail, createPayment,
+  isSignedIn, devSignOut, devEmail, createPayment, setCurrencyPref,
 } from "@/lib/api";
 import { getSupabase, supabaseConfigured } from "@/lib/supabase";
 import { openRazorpay } from "@/lib/razorpay";
 import { uploadLogo } from "@/lib/storage";
-import { useCurrency, fmt, symbol, toUsd, ensureFxRate, getRate } from "@/lib/currency";
+import { fmt, symbol, toUsd, fetchLiveRate } from "@/lib/currency";
 import { ProfileMenu } from "@/components/profile-menu";
-import { CheckCircle2, XCircle, ExternalLink, Plus, LogOut, Wallet, Upload, ImageIcon } from "lucide-react";
+import { CheckCircle2, XCircle, ExternalLink, Plus, LogOut, Wallet, Upload, ImageIcon, Lock } from "lucide-react";
+
+const LOCK_MS = 30 * 24 * 60 * 60 * 1000;
 
 export default function PortalPage() {
   const router = useRouter();
@@ -26,6 +28,10 @@ export default function PortalPage() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [wallet, setWallet] = useState(0);
   const [email, setEmail] = useState<string | null>(null);
+  const [pref, setPref] = useState<Currency | null>(null);
+  const [prefSetAt, setPrefSetAt] = useState<string | null>(null);
+  const [lockedRate, setLockedRate] = useState<number | null>(null);
+  const [liveRate, setLiveRate] = useState(83);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -34,14 +40,28 @@ export default function PortalPage() {
       setCampaigns(data.campaigns);
       setWallet(data.wallet_usd);
       setEmail(data.email);
+      setPref(data.currency_pref);
+      setPrefSetAt(data.currency_pref_set_at);
+      setLockedRate(data.fx_rate_locked);
       setError(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load campaigns");
     }
   }, []);
 
+  // Derived currency view: locked pref + frozen rate (or live rate as preview).
+  const currency: Currency = pref ?? "usd";
+  const rate = lockedRate ?? liveRate;
+  const canChangeCurrency = !prefSetAt || Date.now() - Date.parse(prefSetAt) >= LOCK_MS;
+  const lockedUntil = prefSetAt ? new Date(Date.parse(prefSetAt) + LOCK_MS) : null;
+
+  const changeCurrency = useCallback(async (c: Currency) => {
+    await setCurrencyPref(c);
+    await load();
+  }, [load]);
+
   useEffect(() => {
-    ensureFxRate(); // load today's USD↔INR rate
+    fetchLiveRate().then(setLiveRate).catch(() => {});
     (async () => {
       if (!(await isSignedIn())) {
         router.replace("/login");
@@ -85,14 +105,16 @@ export default function PortalPage() {
           </div>
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="sm" onClick={() => void signOut()}><LogOut className="h-4 w-4" /> Sign out</Button>
-            <ProfileMenu email={email} />
+            <ProfileMenu email={email} currency={currency} rate={rate} pref={pref}
+              canChange={canChangeCurrency} lockedUntil={lockedUntil} onSetCurrency={changeCurrency} />
           </div>
         </div>
 
         <div className="grid gap-8 lg:grid-cols-[380px_1fr]">
           <div className="space-y-6">
-            <WalletPanel wallet={wallet} onTopUp={load} />
-            <NewCampaign wallet={wallet} onDone={load} />
+            <WalletPanel wallet={wallet} currency={currency} rate={rate} pref={pref}
+              canChange={canChangeCurrency} onTopUp={load} />
+            <NewCampaign wallet={wallet} currency={currency} rate={rate} onDone={load} />
           </div>
           <div>
             <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">Active &amp; past campaigns</h2>
@@ -111,8 +133,9 @@ export default function PortalPage() {
   );
 }
 
-function NewCampaign({ wallet, onDone }: { wallet: number; onDone: () => Promise<void> }) {
-  const [currency] = useCurrency();
+function NewCampaign({ wallet, currency, rate, onDone }: {
+  wallet: number; currency: Currency; rate: number; onDone: () => Promise<void>;
+}) {
   const [form, setForm] = useState({ advertiser_name: "", text: "", url: "", description: "", budget_remaining: "50" });
   const [billing, setBilling] = useState<BillingModel>("cpm");
   const [useColor, setUseColor] = useState(false);
@@ -153,7 +176,7 @@ function NewCampaign({ wallet, onDone }: { wallet: number; onDone: () => Promise
         brand_color: useColor ? brandColor : undefined,
         logo_url: logoUrl || undefined,
         billing_model: billing,
-        budget_remaining: toUsd(Number(form.budget_remaining) || 0, currency),
+        budget_remaining: toUsd(Number(form.budget_remaining) || 0, currency, rate),
       });
       if (r.approved) {
         setResult({ ok: true, msg: "Approved and live! 🎉" });
@@ -170,7 +193,7 @@ function NewCampaign({ wallet, onDone }: { wallet: number; onDone: () => Promise
     }
   }
 
-  const budgetUsd = toUsd(Number(form.budget_remaining) || 0, currency);
+  const budgetUsd = toUsd(Number(form.budget_remaining) || 0, currency, rate);
 
   return (
     <Card id="new-campaign" className="h-fit scroll-mt-24 transition-shadow">
@@ -251,7 +274,7 @@ function NewCampaign({ wallet, onDone }: { wallet: number; onDone: () => Promise
           <Field label={`Budget (${symbol(currency)})`}>
             <Input type="number" min={0} value={form.budget_remaining} onChange={set("budget_remaining")} />
             <p className="text-xs text-muted-foreground">
-              Drawn from your wallet ({fmt(wallet, currency)} available) ·{" "}
+              Drawn from your wallet ({fmt(wallet, currency, rate)} available) ·{" "}
               {billing === "cpm"
                 ? `≈ ${Math.round(budgetUsd / RATES.cpm.costPerImpression).toLocaleString()} impressions`
                 : `≈ ${Math.round(budgetUsd / RATES.cpc.costPerClick).toLocaleString()} clicks`}
@@ -308,9 +331,11 @@ function PreviewBar({ bg, defaultText, label, text, color }: { bg: string; defau
   );
 }
 
-function WalletPanel({ wallet, onTopUp }: { wallet: number; onTopUp: () => Promise<void> }) {
+function WalletPanel({ wallet, currency, rate, pref, canChange, onTopUp }: {
+  wallet: number; currency: Currency; rate: number; pref: Currency | null;
+  canChange: boolean; onTopUp: () => Promise<void>;
+}) {
   const [open, setOpen] = useState(false);
-  const [currency] = useCurrency();
   return (
     <Card>
       <CardHeader>
@@ -318,17 +343,25 @@ function WalletPanel({ wallet, onTopUp }: { wallet: number; onTopUp: () => Promi
         <CardDescription>Prepaid balance used to fund campaigns.</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="text-3xl font-bold">{fmt(wallet, currency)}</div>
+        <div className="text-3xl font-bold">{fmt(wallet, currency, rate)}</div>
         <Button className="mt-4 w-full" onClick={() => setOpen(true)}><Plus className="h-4 w-4" /> Add funds</Button>
-        {open && <AddFundsDialog onClose={() => setOpen(false)} onDone={onTopUp} />}
+        {open && (
+          <AddFundsDialog onClose={() => setOpen(false)} onDone={onTopUp}
+            pref={pref} rate={rate} canChange={canChange} />
+        )}
       </CardContent>
     </Card>
   );
 }
 
-function AddFundsDialog({ onClose, onDone }: { onClose: () => void; onDone: () => Promise<void> }) {
-  const [pref] = useCurrency();
-  const [currency, setCurrency] = useState<Currency>(pref);
+function AddFundsDialog({ onClose, onDone, pref, rate, canChange }: {
+  onClose: () => void; onDone: () => Promise<void>;
+  pref: Currency | null; rate: number; canChange: boolean;
+}) {
+  // If a currency is locked, fund in it only. Otherwise let them pick (the first
+  // top-up locks it for 30 days).
+  const [currency, setCurrency] = useState<Currency>(pref ?? "usd");
+  const locked = !canChange && pref != null;
   const [amount, setAmount] = useState(currency === "inr" ? "4150" : "50");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -368,18 +401,30 @@ function AddFundsDialog({ onClose, onDone }: { onClose: () => void; onDone: () =
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex gap-2">
-            <Button type="button" variant={currency === "usd" ? "default" : "outline"} size="sm" className="flex-1"
-              onClick={() => { setCurrency("usd"); setAmount("50"); }}>$ USD</Button>
-            <Button type="button" variant={currency === "inr" ? "default" : "outline"} size="sm" className="flex-1"
-              onClick={() => { setCurrency("inr"); setAmount("4150"); }}>₹ INR</Button>
-          </div>
+          {locked ? (
+            <div className="flex items-center gap-2 rounded-md border bg-muted/40 px-3 py-2 text-sm">
+              <Lock className="h-4 w-4 text-muted-foreground" />
+              Billing currency: <b>{currency === "inr" ? "₹ INR" : "$ USD"}</b> (locked)
+            </div>
+          ) : (
+            <>
+              <div className="flex gap-2">
+                <Button type="button" variant={currency === "usd" ? "default" : "outline"} size="sm" className="flex-1"
+                  onClick={() => { setCurrency("usd"); setAmount("50"); }}>$ USD</Button>
+                <Button type="button" variant={currency === "inr" ? "default" : "outline"} size="sm" className="flex-1"
+                  onClick={() => { setCurrency("inr"); setAmount("4150"); }}>₹ INR</Button>
+              </div>
+              <p className="rounded-md bg-amber-500/10 px-3 py-2 text-xs text-amber-600 dark:text-amber-400">
+                ⚠️ Your billing currency locks for 30 days at today&apos;s rate once you add funds.
+              </p>
+            </>
+          )}
           <div className="space-y-1.5">
             <Label>Amount ({sym})</Label>
             <Input type="number" min={0} value={amount} onChange={(e) => setAmount(e.target.value)} />
             {currency === "inr" && (
               <p className="text-xs text-muted-foreground">
-                Today&apos;s rate $1 = ₹{getRate().toFixed(2)} · credits ≈ ${(toUsd(Number(amount) || 0, "inr")).toFixed(2)} to your wallet
+                Rate $1 = ₹{rate.toFixed(2)} · credits ≈ ${(toUsd(Number(amount) || 0, "inr", rate)).toFixed(2)} to your wallet
               </p>
             )}
           </div>

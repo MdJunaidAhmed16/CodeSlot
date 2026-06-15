@@ -35,12 +35,37 @@ Deno.serve(async (req) => {
   const amount = Number(body.amount);
   if (!Number.isFinite(amount) || amount <= 0) return error("invalid amount", 400);
 
-  const currency: Currency =
+  const requested: Currency =
     body.currency === "inr" || body.currency === "usd"
       ? body.currency
       : currencyForCountry(typeof body.country === "string" ? body.country : null);
 
-  const fxRate = await getUsdInrRate(); // today's USD→INR (cached)
+  // Honor the advertiser's locked billing currency + frozen rate. The currency
+  // is locked for 30 days (see advertiser-account); the first top-up sets it.
+  const { data: adv } = await db
+    .from("advertisers")
+    .select("currency_pref, fx_rate_locked")
+    .eq("id", advertiserId)
+    .single();
+
+  let currency: Currency;
+  let fxRate: number;
+  if (adv?.currency_pref) {
+    currency = adv.currency_pref as Currency;
+    if (requested !== currency) {
+      return error(`your billing currency is locked to ${currency.toUpperCase()}`, 409);
+    }
+    fxRate = Number(adv.fx_rate_locked) || (await getUsdInrRate());
+  } else {
+    // First top-up locks the currency + freezes today's rate.
+    currency = requested;
+    fxRate = await getUsdInrRate();
+    await db
+      .from("advertisers")
+      .update({ currency_pref: currency, currency_pref_set_at: new Date().toISOString(), fx_rate_locked: fxRate })
+      .eq("id", advertiserId);
+  }
+
   const amountUsd = amountToUsd(amount, currency, fxRate);
   if (amountUsd < MIN_USD) return error(`minimum top-up is $${MIN_USD}`, 400);
   if (amountUsd > MAX_USD) return error("amount too large", 400);
