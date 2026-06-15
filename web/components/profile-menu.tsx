@@ -30,9 +30,10 @@ export function ProfileMenu({ email }: { email: string | null }) {
     return () => document.removeEventListener("mousedown", onClick);
   }, []);
 
+  // Fetch on mount so the avatar shows the right initial even before opening.
   useEffect(() => {
-    if (open && !account) getAccount().then(setAccount).catch(() => {});
-  }, [open, account]);
+    getAccount().then(setAccount).catch(() => {});
+  }, []);
 
   async function signOut() {
     if (supabaseConfigured) await getSupabase()?.auth.signOut();
@@ -54,7 +55,9 @@ export function ProfileMenu({ email }: { email: string | null }) {
     }
   }
 
-  const initial = (email ?? "?").charAt(0).toUpperCase();
+  // Prefer the loaded account email, fall back to the prop / name, then "U".
+  const identity = account?.email || email || account?.name || "";
+  const initial = (identity.trim().charAt(0) || "U").toUpperCase();
 
   return (
     <div className="relative" ref={ref}>
