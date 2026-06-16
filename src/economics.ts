@@ -32,6 +32,34 @@ export function formatUsd(usd: number): string {
   return "$" + usd.toFixed(2);
 }
 
+/** The currency we surface earnings in. INR uses a live USD→INR rate. */
+export type DisplayCurrency = "usd" | "inr";
+
+/**
+ * Format a USD amount as real money in the developer's display currency.
+ * Earnings lead with money (this) so the value feels tangible; raw credits are
+ * shown only as a small secondary note via {@link formatCredits}.
+ */
+export function formatMoney(
+  usd: number,
+  currency: DisplayCurrency = "usd",
+  rate = 1
+): string {
+  if (currency === "inr") {
+    return "₹" + Math.round(usd * rate).toLocaleString("en-IN");
+  }
+  return "$" + usd.toFixed(2);
+}
+
+/** Format whole credits as real money, e.g. 5_000 → "$5.00" / "₹474". */
+export function creditsToMoney(
+  credits: number,
+  currency: DisplayCurrency = "usd",
+  rate = 1
+): string {
+  return formatMoney(creditsToUsd(credits), currency, rate);
+}
+
 /** Whole credits with thousands separators, e.g. "12,340 cr". */
 export function formatCredits(credits: number): string {
   return Math.round(credits).toLocaleString("en-US") + " cr";

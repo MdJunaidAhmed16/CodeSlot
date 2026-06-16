@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import { ApiClient } from "../api/client";
 import { renderWebviewHtml } from "./html";
+import { resolveMoney } from "../money";
 import type { BalanceResponse } from "../types";
 
 /**
@@ -85,6 +86,8 @@ export class WalletPanel {
 
   private async refresh(): Promise<void> {
     this.post({ type: "enabled", value: this.callbacks.isEnabled() });
+    const money = await resolveMoney(this.api);
+    this.post({ type: "money", currency: money.currency, rate: money.rate });
     try {
       const balance = await this.api.balance();
       this.post({ type: "balance", data: sanitize(balance) });

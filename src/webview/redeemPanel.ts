@@ -7,6 +7,7 @@ import {
   MIN_REDEEM_CREDITS,
   PLATFORM_FEE_RATE,
 } from "../economics";
+import { resolveMoney } from "../money";
 
 /** Models the user can redeem credits toward (mirrors the redeem mockup). */
 const MODELS = [
@@ -105,6 +106,7 @@ export class RedeemPanel {
     } catch {
       // Show the form anyway; confirm will re-check server-side.
     }
+    const money = await resolveMoney(this.api);
     this.post({
       type: "init",
       models: MODELS,
@@ -112,6 +114,8 @@ export class RedeemPanel {
       minCredits: MIN_REDEEM_CREDITS,
       creditUsd: creditsToUsd(1),
       feeRate: PLATFORM_FEE_RATE,
+      currency: money.currency,
+      rate: money.rate,
     });
   }
 

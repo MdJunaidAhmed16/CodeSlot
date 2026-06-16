@@ -12,6 +12,8 @@
     feeRate: 0.05,
     minCredits: 5000,
     balanceCredits: 0,
+    currency: "usd", // display currency for the balance line
+    rate: 1, // live USD→INR when currency is INR
     model: null,
     amountCredits: 0,
     key: null,
@@ -22,6 +24,15 @@
   }
   function usd(credits) {
     return money(Number(credits) * state.creditUsd);
+  }
+  // The developer's balance in their display currency (₹ uses the live rate).
+  // The redemption breakdown itself stays in USD — the OpenRouter key is USD.
+  function bal(credits) {
+    const inUsd = Number(credits) * state.creditUsd;
+    if (state.currency === "inr") {
+      return "₹" + Math.round(inUsd * state.rate).toLocaleString("en-IN");
+    }
+    return money(inUsd);
   }
   function cr(credits) {
     return Math.round(Number(credits)).toLocaleString("en-US") + " cr";
@@ -130,7 +141,9 @@
       state.feeRate = Number(msg.feeRate) || 0.05;
       state.minCredits = Number(msg.minCredits) || 5000;
       state.creditUsd = Number(msg.creditUsd) || 0.001;
-      $("bal").textContent = usd(state.balanceCredits) + " (" + cr(state.balanceCredits) + ")";
+      state.currency = msg.currency === "inr" ? "inr" : "usd";
+      state.rate = Number(msg.rate) > 0 ? Number(msg.rate) : 1;
+      $("bal").textContent = bal(state.balanceCredits) + " (" + cr(state.balanceCredits) + ")";
       renderModels();
     } else if (msg.type === "busy") {
       $("next").disabled = !!msg.value;
@@ -142,7 +155,7 @@
       s.textContent = msg.message;
       if (msg.ok && typeof msg.newBalance === "number") {
         state.balanceCredits = msg.newBalance;
-        $("bal").textContent = usd(state.balanceCredits) + " (" + cr(state.balanceCredits) + ")";
+        $("bal").textContent = bal(state.balanceCredits) + " (" + cr(state.balanceCredits) + ")";
       }
       if (msg.ok && typeof msg.key === "string") {
         state.key = msg.key;

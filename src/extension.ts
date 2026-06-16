@@ -10,7 +10,8 @@ import { WalletPanel } from "./webview/walletPanel";
 import { RedeemPanel } from "./webview/redeemPanel";
 import { isEnabled } from "./config";
 import { isSafeHttpUrl } from "./util/validation";
-import { creditsToUsd, formatCredits, formatUsd } from "./economics";
+import { creditsToMoney, formatCredits } from "./economics";
+import { resolveMoney } from "./money";
 
 /**
  * Activation entry point.
@@ -58,6 +59,9 @@ export function activate(context: vscode.ExtensionContext): void {
       if (e.affectsConfiguration("codeslot.apiBaseUrl")) {
         void fetcher.refresh();
       }
+      if (e.affectsConfiguration("codeslot.displayCurrency")) {
+        void refreshMoney();
+      }
     })
   );
 
@@ -84,7 +88,13 @@ export function activate(context: vscode.ExtensionContext): void {
     tracker.setPaused(false);
     statusBar.showConnecting();
     fetcher.start();
+    void refreshMoney();
     void refreshBalance();
+  }
+
+  async function refreshMoney(): Promise<void> {
+    const { currency, rate } = await resolveMoney(api);
+    statusBar.setMoney(currency, rate);
   }
 
   async function refreshBalance(): Promise<void> {
@@ -163,9 +173,10 @@ function registerCommands(context: vscode.ExtensionContext, deps: Deps): void {
     try {
       const b = await api.balance();
       statusBar.setBalance(b.balance);
+      const { currency, rate } = await resolveMoney(api);
       void vscode.window.showInformationMessage(
-        `CodeSlot: ${formatUsd(creditsToUsd(b.balance))} · ${formatCredits(b.balance)} ` +
-          `(earned ${formatCredits(b.lifetime_earned)}, redeemed ${formatCredits(b.lifetime_redeemed)}).`
+        `CodeSlot: you've earned ${creditsToMoney(b.balance, currency, rate)} ` +
+          `(${formatCredits(b.balance)}) · redeemed ${formatCredits(b.lifetime_redeemed)}.`
       );
     } catch (err) {
       void vscode.window.showErrorMessage(

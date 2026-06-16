@@ -130,6 +130,11 @@ export class ApiClient {
     });
   }
 
+  /** Public live USD→INR rate (no auth) — used to show earnings in ₹. */
+  fxRate(): Promise<{ usd_inr: number }> {
+    return this.request<{ usd_inr: number }>("fx-rate", { method: "GET" });
+  }
+
   redeem(args: {
     model: string;
     creditsToRedeem: number;

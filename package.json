@@ -82,6 +82,17 @@
           "default": true,
           "description": "Show sponsored slot and accrue credits. When off, no ads are shown and no credits are earned."
         },
+        "codeslot.displayCurrency": {
+          "type": "string",
+          "enum": ["auto", "usd", "inr"],
+          "enumDescriptions": [
+            "Pick automatically from your editor's region (₹ for India, otherwise $).",
+            "Show earnings in US dollars ($).",
+            "Show earnings in Indian rupees (₹), converted at the live rate."
+          ],
+          "default": "auto",
+          "description": "Currency used to display your earnings. Your balance is held in credits; this only changes how it's shown as real money."
+        },
         "codeslot.apiBaseUrl": {
           "type": "string",
           "default": "",

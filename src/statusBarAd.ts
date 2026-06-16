@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import { isHexColor, isHttpsUrl } from "./util/validation";
-import { creditsToUsd, formatCredits, formatUsd } from "./economics";
+import { creditsToMoney, formatCredits, type DisplayCurrency } from "./economics";
 import type { Ad } from "./types";
 
 /**
@@ -12,6 +12,9 @@ export class StatusBarAd implements vscode.Disposable {
   private readonly adItem: vscode.StatusBarItem;
   private readonly balanceItem: vscode.StatusBarItem;
   private currentAd: Ad | null = null;
+  private currency: DisplayCurrency = "usd";
+  private rate = 1;
+  private lastBalance: number | null = null;
 
   constructor() {
     // Ad slot sits at the far right, low priority so it never crowds out
@@ -68,9 +71,19 @@ export class StatusBarAd implements vscode.Disposable {
     this.adItem.show();
   }
 
+  /** Sets the currency earnings are shown in (and the live rate for INR). */
+  setMoney(currency: DisplayCurrency, rate: number): void {
+    this.currency = currency;
+    this.rate = rate > 0 ? rate : 1;
+    if (this.lastBalance !== null) {
+      this.setBalance(this.lastBalance); // re-render with the new currency
+    }
+  }
+
   /** @param balanceCredits whole credits, or null if the backend is unreachable */
   setBalance(balanceCredits: number | null): void {
     this.resetBalanceCommand();
+    this.lastBalance = balanceCredits;
     if (balanceCredits === null) {
       // Backend not reachable yet — stay visible so CodeSlot is always
       // present and clickable (opening the wallet still works offline).
@@ -80,8 +93,9 @@ export class StatusBarAd implements vscode.Disposable {
       this.balanceItem.show();
       return;
     }
-    this.balanceItem.text = `$(credit-card) ${formatUsd(creditsToUsd(balanceCredits))}`;
-    this.balanceItem.tooltip = `${formatCredits(balanceCredits)} · click to open your wallet`;
+    // Lead with real money; keep raw credits as a secondary tooltip note.
+    this.balanceItem.text = `$(credit-card) ${creditsToMoney(balanceCredits, this.currency, this.rate)}`;
+    this.balanceItem.tooltip = `You've earned ${formatCredits(balanceCredits)} · click to open your wallet`;
     this.balanceItem.show();
   }
 

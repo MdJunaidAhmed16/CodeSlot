@@ -6,16 +6,27 @@
   const $ = (id) => document.getElementById(id);
 
   const CREDIT_USD = 0.001; // 1 credit = $0.001
+  // Display currency + live rate, pushed by the host (defaults to USD).
+  const disp = { currency: "usd", rate: 1 };
 
-  function usd(credits) {
-    return "$" + (Number(credits) * CREDIT_USD).toFixed(2);
+  /** Whole credits → real money in the developer's display currency. */
+  function money(credits) {
+    const usd = Number(credits) * CREDIT_USD;
+    if (disp.currency === "inr") {
+      return "₹" + Math.round(usd * disp.rate).toLocaleString("en-IN");
+    }
+    return "$" + usd.toFixed(2);
   }
   function cr(credits) {
     return Math.round(Number(credits)).toLocaleString("en-US") + " cr";
   }
 
+  let last = null; // remember the last balance payload to re-render on currency change
+
   function renderBalance(d) {
-    $("balance").textContent = usd(d.balance);
+    last = d;
+    $("balance").textContent = money(d.balance);
+    // Raw credits live on as a small secondary note under the money figure.
     $("tokens").textContent =
       cr(d.balance) + " · " + cr(d.lifetime_earned) + " earned all-time";
 
@@ -25,7 +36,7 @@
       : "No activity yet today.";
     if (t) {
       const b = document.createElement("b");
-      b.textContent = "+" + cr(t.earned) + " (" + usd(t.earned) + ")";
+      b.textContent = "+" + money(t.earned);
       $("today").appendChild(b);
     }
 
@@ -50,7 +61,7 @@
       left.appendChild(meta);
       const amt = document.createElement("div");
       amt.className = "amt";
-      amt.textContent = "+" + cr(r.credits_awarded);
+      amt.textContent = "+" + money(r.credits_awarded);
       li.appendChild(left);
       li.appendChild(amt);
       list.appendChild(li);
@@ -60,12 +71,17 @@
   window.addEventListener("message", (e) => {
     const msg = e.data || {};
     switch (msg.type) {
+      case "money":
+        disp.currency = msg.currency === "inr" ? "inr" : "usd";
+        disp.rate = Number(msg.rate) > 0 ? Number(msg.rate) : 1;
+        if (last) renderBalance(last); // re-render with the new currency
+        break;
       case "balance":
         renderBalance(msg.data);
         $("error").hidden = true;
         break;
       case "balanceQuick":
-        $("balance").textContent = usd(msg.value);
+        $("balance").textContent = money(msg.value);
         break;
       case "enabled":
         $("enabled").checked = !!msg.value;
