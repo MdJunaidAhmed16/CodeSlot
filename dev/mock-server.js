@@ -330,6 +330,15 @@ const server = http.createServer(async (req, res) => {
       log(`advertiser-auth → ${email}`);
       return send(res, 200, { token, advertiser: { id: advId, email, name: email.split("@")[0] } });
     }
+    if (path === "advertiser-analytics" && req.method === "GET") {
+      const h = req.headers["authorization"] || "";
+      const tok = (h.match(/^Bearer\s+(.+)$/i) || [])[1];
+      const sess = tok && advSessions.get(tok);
+      if (!sess) return send(res, 401, { error: "authentication required" });
+      let days = Number(new URL(req.url, "http://x").searchParams.get("days") || 30);
+      if (![7, 30, 90].includes(days)) days = 30;
+      return send(res, 200, advertiserAnalytics(sess.advertiserId, days));
+    }
     if (path === "advertiser-campaigns") {
       const h = req.headers["authorization"] || "";
       const tok = (h.match(/^Bearer\s+(.+)$/i) || [])[1];
@@ -551,6 +560,62 @@ function advCampaignView(a) {
     active: a.active, weight: a.weight, budget_remaining: a.budget_remaining,
     cost_per_impression: a.cost_per_impression, cost_per_click: a.cost_per_click,
     impressions: c.impressions, clicks: c.clicks, spend: c.spend,
+  };
+}
+
+// Daily impressions/clicks/spend for one advertiser over the last N days.
+// Mirrors the backend advertiser_daily_metrics RPC. Events live in user ledgers
+// keyed by advertiser_name; spend uses that advertiser's per-model rates.
+function advertiserAnalytics(advertiserId, days) {
+  const myAds = ADS.filter((a) => a.advertiser_id === advertiserId);
+  const names = new Set(myAds.map((a) => a.advertiser_name));
+  // Representative rate per advertiser_name (first matching ad wins).
+  const rateOf = {};
+  for (const a of myAds) {
+    if (!rateOf[a.advertiser_name]) rateOf[a.advertiser_name] = { cpi: a.cost_per_impression, cpc: a.cost_per_click };
+  }
+  // Zero-filled, chronological day buckets.
+  const buckets = new Map();
+  const dayKeys = [];
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    const key = d.toISOString().slice(0, 10);
+    dayKeys.push(key);
+    buckets.set(key, { day: key, impressions: 0, clicks: 0, spend_usd: 0 });
+  }
+  let real = 0;
+  for (const [, u] of users) {
+    for (const e of u.ledger) {
+      if (e.event_type !== "impression" && e.event_type !== "click") continue;
+      if (!names.has(e.advertiser)) continue;
+      const key = String(e.at).slice(0, 10);
+      const b = buckets.get(key);
+      if (!b) continue;
+      const r = rateOf[e.advertiser] || { cpi: 0.01, cpc: 0.3 };
+      if (e.event_type === "click") { b.clicks++; b.spend_usd += r.cpc; }
+      else { b.impressions++; b.spend_usd += r.cpi; }
+      real++;
+    }
+  }
+  let series = dayKeys.map((k) => {
+    const b = buckets.get(k);
+    return { ...b, spend_usd: Math.round(b.spend_usd * 100) / 100 };
+  });
+  // Local-dev convenience: with campaigns but no real traffic yet, synthesize a
+  // plausible series so the charts are visible. (Mock server only.)
+  if (real === 0 && myAds.length > 0) {
+    series = dayKeys.map((k, i) => {
+      const impressions = Math.max(0, Math.round(38 + 26 * Math.sin(i / 4) + i * 1.4 + ((i * 7) % 11)));
+      const clicks = Math.round(impressions * (0.02 + ((i % 5) * 0.004)));
+      return { day: k, impressions, clicks, spend_usd: Math.round((impressions * 0.01 + clicks * 0.3) * 100) / 100 };
+    });
+  }
+  const impressions = series.reduce((s, r) => s + r.impressions, 0);
+  const clicks = series.reduce((s, r) => s + r.clicks, 0);
+  const spend_usd = Math.round(series.reduce((s, r) => s + r.spend_usd, 0) * 100) / 100;
+  return {
+    days, series,
+    totals: { impressions, clicks, spend_usd, ctr: impressions ? Math.round((clicks / impressions) * 10000) / 100 : 0 },
   };
 }
 

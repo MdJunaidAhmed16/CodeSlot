@@ -18,6 +18,7 @@ import { openRazorpay } from "@/lib/razorpay";
 import { uploadLogo } from "@/lib/storage";
 import { fmt, toUsd, inrHint, fetchLiveRate } from "@/lib/currency";
 import { ProfileMenu } from "@/components/profile-menu";
+import { AnalyticsPanel } from "@/components/analytics-panel";
 import {
   CheckCircle2, XCircle, ExternalLink, Plus, LogOut, Wallet, Upload, ImageIcon, Lock,
   Pause, Play, Pencil, Trash2,
@@ -121,7 +122,9 @@ export default function PortalPage() {
             <WalletPanel wallet={wallet} pref={pref} rate={rate} canChange={canChangeCurrency} onTopUp={load} />
             <NewCampaign wallet={wallet} pref={pref} rate={rate} onDone={load} />
           </div>
-          <div>
+          <div className="space-y-6">
+            <AnalyticsPanel pref={pref} rate={rate} />
+            <div>
             <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">Active &amp; past campaigns</h2>
             {error && <p className="text-sm text-destructive">{error}</p>}
             {campaigns.length === 0 ? (
@@ -131,6 +134,7 @@ export default function PortalPage() {
                 {campaigns.map((c) => <CampaignRow key={c.id} c={c} wallet={wallet} pref={pref} rate={rate} onChanged={load} />)}
               </div>
             )}
+            </div>
           </div>
         </div>
       </main>

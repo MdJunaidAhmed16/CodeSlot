@@ -159,6 +159,22 @@ export const deleteCampaign = (id: string) =>
     body: JSON.stringify({ id }),
   });
 
+export interface DailyMetric {
+  day: string; // YYYY-MM-DD
+  impressions: number;
+  clicks: number;
+  spend_usd: number;
+}
+
+export interface Analytics {
+  days: number;
+  series: DailyMetric[];
+  totals: { impressions: number; clicks: number; spend_usd: number; ctr: number };
+}
+
+export const getAnalytics = (days: 7 | 30 | 90 = 30) =>
+  call<Analytics>(`advertiser-analytics?days=${days}`);
+
 export type Currency = "usd" | "inr";
 
 export interface PaymentCreateResult {

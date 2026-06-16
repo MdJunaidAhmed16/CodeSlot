@@ -376,9 +376,11 @@ end;
 $$;
 
 -- ─────────────────── Admin metrics view ─────────────────────────
-create or replace view ad_metrics as
+drop view if exists ad_metrics;
+create view ad_metrics as
   select
     a.id,
+    a.advertiser_id,
     a.advertiser_name,
     a.text,
     a.active,
@@ -393,6 +395,33 @@ create or replace view ad_metrics as
   from ads a
   left join impressions i on i.ad_id = a.id
   group by a.id;
+
+-- Daily impressions / clicks / spend for one advertiser over the last N days.
+-- Powers the portal's over-time charts. Gaps are filled with zero rows so the
+-- series is always exactly p_days long and chronological.
+create or replace function advertiser_daily_metrics(
+  p_advertiser uuid,
+  p_days       integer default 30
+)
+returns table(day date, impressions bigint, clicks bigint, spend_usd numeric)
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select
+    g.day::date as day,
+    count(i.id) filter (where i.event_type = 'impression') as impressions,
+    count(i.id) filter (where i.event_type = 'click')      as clicks,
+    coalesce(sum(case when i.event_type = 'impression' then a.cost_per_impression
+                      when i.event_type = 'click'      then a.cost_per_click end), 0) as spend_usd
+  from generate_series(current_date - (p_days - 1), current_date, interval '1 day') as g(day)
+  left join ads a on a.advertiser_id = p_advertiser
+  left join impressions i
+    on i.ad_id = a.id and i.created_at::date = g.day::date
+  group by g.day
+  order by g.day;
+$$;
 
 -- ─────────────────── Lock down with RLS (deny-all) ──────────────
 alter table ads            enable row level security;

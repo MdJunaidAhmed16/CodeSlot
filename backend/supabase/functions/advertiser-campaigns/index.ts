@@ -27,6 +27,22 @@ Deno.serve(async (req) => {
       .order("created_at", { ascending: false });
     if (e) return error("could not load campaigns", 500);
 
+    // Merge in lifetime impressions/clicks/spend per campaign from ad_metrics.
+    const { data: metrics } = await db
+      .from("ad_metrics")
+      .select("id, impressions, clicks, spend")
+      .eq("advertiser_id", advertiserId);
+    const byId = new Map((metrics ?? []).map((m) => [m.id, m]));
+    const campaigns = (data ?? []).map((c) => {
+      const m = byId.get(c.id);
+      return {
+        ...c,
+        impressions: Number(m?.impressions ?? 0),
+        clicks: Number(m?.clicks ?? 0),
+        spend: Number(m?.spend ?? 0),
+      };
+    });
+
     // Include the wallet balance + currency lock + recent top-ups for the portal.
     const { data: adv } = await db
       .from("advertisers")
@@ -41,7 +57,7 @@ Deno.serve(async (req) => {
       .limit(10);
 
     return json({
-      campaigns: data ?? [],
+      campaigns,
       wallet_usd: Number(adv?.wallet_usd ?? 0),
       email: adv?.email ?? null,
       currency_pref: adv?.currency_pref ?? null,
