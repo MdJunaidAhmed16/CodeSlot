@@ -1,11 +1,11 @@
 // Advertiser account (Supabase-Auth gated).
 //   GET  /advertiser-account  → profile details (incl. currency lock)
-//   POST /advertiser-account  { action: "set_currency", currency } → set billing
-//                              currency, locked 30 days, with frozen FX rate
+//   POST /advertiser-account  { action: "set_currency", currency } → set the
+//                              billing currency (payment rail), locked 30 days.
+//                              The FX rate is NOT frozen — top-ups convert live.
 //   POST /advertiser-account  { action: "delete" } → hard-delete the account
 import { error, handleOptions, json, readJson } from "../_shared/http.ts";
 import { requireAdvertiser } from "../_shared/advertiser.ts";
-import { getUsdInrRate } from "../_shared/fx.ts";
 
 const LOCK_DAYS = 30;
 const LOCK_MS = LOCK_DAYS * 24 * 60 * 60 * 1000;
@@ -65,14 +65,14 @@ Deno.serve(async (req) => {
         return error(`currency is locked until ${until.toISOString().slice(0, 10)}`, 409);
       }
 
-      // Freeze today's rate so the displayed balance never drifts.
-      const rate = await getUsdInrRate();
+      // Lock the payment rail for 30 days. The rate stays live (no freeze) —
+      // top-ups convert at the live rate, so the wallet's USD value is honest.
       const { error: upErr } = await db
         .from("advertisers")
-        .update({ currency_pref: currency, currency_pref_set_at: new Date().toISOString(), fx_rate_locked: rate })
+        .update({ currency_pref: currency, currency_pref_set_at: new Date().toISOString(), fx_rate_locked: null })
         .eq("id", advertiserId);
       if (upErr) return error("could not set currency", 500);
-      return json({ currency_pref: currency, fx_rate_locked: rate, can_change_currency: false });
+      return json({ currency_pref: currency, fx_rate_locked: null, can_change_currency: false });
     }
 
     if (body.action === "delete") {

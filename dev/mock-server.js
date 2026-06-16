@@ -445,8 +445,9 @@ const server = http.createServer(async (req, res) => {
             const until = new Date(p.set_at + LOCK_MS).toISOString().slice(0, 10);
             return send(res, 409, { error: `currency is locked until ${until}` });
           }
-          p.currency_pref = b.currency; p.set_at = Date.now(); p.fx_rate_locked = await getMockRate();
-          return send(res, 200, { currency_pref: p.currency_pref, fx_rate_locked: p.fx_rate_locked, can_change_currency: false });
+          // Lock the payment rail for 30 days; rate stays live (no freeze).
+          p.currency_pref = b.currency; p.set_at = Date.now(); p.fx_rate_locked = null;
+          return send(res, 200, { currency_pref: p.currency_pref, fx_rate_locked: null, can_change_currency: false });
         }
         if (b.action !== "delete") return send(res, 400, { error: "unknown action" });
         // Remove the advertiser's campaigns, wallet, payments, session.
@@ -471,16 +472,16 @@ const server = http.createServer(async (req, res) => {
       if (!isFinite(amount) || amount <= 0) return send(res, 400, { error: "invalid amount" });
       const requested = b.currency === "inr" || b.currency === "usd" ? b.currency
         : (String(b.country || "").toUpperCase() === "IN" ? "inr" : "usd");
-      // Honor / set the locked currency + frozen rate.
+      // Honor / set the locked currency rail; convert at the LIVE rate (no freeze).
       const p = profileOf(sess.advertiserId);
-      let currency, rate;
+      const rate = await getMockRate();
+      let currency;
       if (p.currency_pref) {
         currency = p.currency_pref;
         if (requested !== currency) return send(res, 409, { error: `your billing currency is locked to ${currency.toUpperCase()}` });
-        rate = p.fx_rate_locked || (await getMockRate());
       } else {
-        currency = requested; rate = await getMockRate();
-        p.currency_pref = currency; p.set_at = Date.now(); p.fx_rate_locked = rate;
+        currency = requested;
+        p.currency_pref = currency; p.set_at = Date.now(); p.fx_rate_locked = null;
       }
       const amountUsd = Math.round((currency === "inr" ? amount / rate : amount) * 100) / 100;
       if (amountUsd < 5) return send(res, 400, { error: "minimum top-up is $5" });

@@ -16,7 +16,7 @@ import {
 import { getSupabase, supabaseConfigured } from "@/lib/supabase";
 import { openRazorpay } from "@/lib/razorpay";
 import { uploadLogo } from "@/lib/storage";
-import { fmt, symbol, toUsd, fetchLiveRate } from "@/lib/currency";
+import { fmt, toUsd, inrHint, fetchLiveRate } from "@/lib/currency";
 import { ProfileMenu } from "@/components/profile-menu";
 import {
   CheckCircle2, XCircle, ExternalLink, Plus, LogOut, Wallet, Upload, ImageIcon, Lock,
@@ -24,6 +24,12 @@ import {
 } from "lucide-react";
 
 const LOCK_MS = 30 * 24 * 60 * 60 * 1000;
+
+/** Small, clearly-live "≈ ₹X" hint shown to INR-rail advertisers next to USD. */
+function InrHint({ usd, pref, rate, className = "" }: { usd: number; pref: Currency | null; rate: number; className?: string }) {
+  if (pref !== "inr") return null;
+  return <span className={"text-muted-foreground " + className}>{inrHint(usd, rate)} today</span>;
+}
 
 export default function PortalPage() {
   const router = useRouter();
@@ -33,8 +39,7 @@ export default function PortalPage() {
   const [email, setEmail] = useState<string | null>(null);
   const [pref, setPref] = useState<Currency | null>(null);
   const [prefSetAt, setPrefSetAt] = useState<string | null>(null);
-  const [lockedRate, setLockedRate] = useState<number | null>(null);
-  const [liveRate, setLiveRate] = useState(83);
+  const [rate, setRate] = useState(90);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -45,16 +50,14 @@ export default function PortalPage() {
       setEmail(data.email);
       setPref(data.currency_pref);
       setPrefSetAt(data.currency_pref_set_at);
-      setLockedRate(data.fx_rate_locked);
       setError(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load campaigns");
     }
   }, []);
 
-  // Derived currency view: locked pref + frozen rate (or live rate as preview).
-  const currency: Currency = pref ?? "usd";
-  const rate = lockedRate ?? liveRate;
+  // The display is always USD (the unit ads are priced in); `pref` is only the
+  // locked payment rail, and the rate is always live (used for ₹ hints + checkout).
   const canChangeCurrency = !prefSetAt || Date.now() - Date.parse(prefSetAt) >= LOCK_MS;
   const lockedUntil = prefSetAt ? new Date(Date.parse(prefSetAt) + LOCK_MS) : null;
 
@@ -64,7 +67,7 @@ export default function PortalPage() {
   }, [load]);
 
   useEffect(() => {
-    fetchLiveRate().then(setLiveRate).catch(() => {});
+    fetchLiveRate().then(setRate).catch(() => {});
     (async () => {
       if (!(await isSignedIn())) {
         router.replace("/login");
@@ -108,16 +111,15 @@ export default function PortalPage() {
           </div>
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="sm" onClick={() => void signOut()}><LogOut className="h-4 w-4" /> Sign out</Button>
-            <ProfileMenu email={email} currency={currency} rate={rate} pref={pref}
+            <ProfileMenu email={email} rate={rate} pref={pref}
               canChange={canChangeCurrency} lockedUntil={lockedUntil} onSetCurrency={changeCurrency} />
           </div>
         </div>
 
         <div className="grid gap-8 lg:grid-cols-[380px_1fr]">
           <div className="space-y-6">
-            <WalletPanel wallet={wallet} currency={currency} rate={rate} pref={pref}
-              canChange={canChangeCurrency} onTopUp={load} />
-            <NewCampaign wallet={wallet} currency={currency} rate={rate} onDone={load} />
+            <WalletPanel wallet={wallet} pref={pref} rate={rate} canChange={canChangeCurrency} onTopUp={load} />
+            <NewCampaign wallet={wallet} pref={pref} rate={rate} onDone={load} />
           </div>
           <div>
             <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">Active &amp; past campaigns</h2>
@@ -126,7 +128,7 @@ export default function PortalPage() {
               <Card><CardContent className="py-12 text-center text-sm text-muted-foreground">No campaigns yet. Create your first one →</CardContent></Card>
             ) : (
               <div className="space-y-3">
-                {campaigns.map((c) => <CampaignRow key={c.id} c={c} wallet={wallet} currency={currency} rate={rate} onChanged={load} />)}
+                {campaigns.map((c) => <CampaignRow key={c.id} c={c} wallet={wallet} pref={pref} rate={rate} onChanged={load} />)}
               </div>
             )}
           </div>
@@ -136,8 +138,8 @@ export default function PortalPage() {
   );
 }
 
-function NewCampaign({ wallet, currency, rate, onDone }: {
-  wallet: number; currency: Currency; rate: number; onDone: () => Promise<void>;
+function NewCampaign({ wallet, pref, rate, onDone }: {
+  wallet: number; pref: Currency | null; rate: number; onDone: () => Promise<void>;
 }) {
   const [form, setForm] = useState({ advertiser_name: "", text: "", url: "", description: "", budget_remaining: "50" });
   const [billing, setBilling] = useState<BillingModel>("cpm");
@@ -166,6 +168,9 @@ function NewCampaign({ wallet, currency, rate, onDone }: {
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setForm({ ...form, [k]: e.target.value });
 
+  // Budget is entered directly in USD (the wallet's unit).
+  const budgetUsd = Number(form.budget_remaining) || 0;
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
@@ -179,7 +184,7 @@ function NewCampaign({ wallet, currency, rate, onDone }: {
         brand_color: useColor ? brandColor : undefined,
         logo_url: logoUrl || undefined,
         billing_model: billing,
-        budget_remaining: toUsd(Number(form.budget_remaining) || 0, currency, rate),
+        budget_remaining: budgetUsd,
       });
       if (r.approved) {
         setResult({ ok: true, msg: "Approved and live! 🎉" });
@@ -195,8 +200,6 @@ function NewCampaign({ wallet, currency, rate, onDone }: {
       setBusy(false);
     }
   }
-
-  const budgetUsd = toUsd(Number(form.budget_remaining) || 0, currency, rate);
 
   return (
     <Card id="new-campaign" className="h-fit scroll-mt-24 transition-shadow">
@@ -274,14 +277,15 @@ function NewCampaign({ wallet, currency, rate, onDone }: {
             </p>
           </div>
 
-          <Field label={`Budget (${symbol(currency)})`}>
+          <Field label="Budget ($)">
             <Input type="number" min={0} value={form.budget_remaining} onChange={set("budget_remaining")} />
             <p className="text-xs text-muted-foreground">
-              Drawn from your wallet ({fmt(wallet, currency, rate)} available) ·{" "}
+              Drawn from your wallet ({fmt(wallet, "usd", rate)} available) ·{" "}
               {billing === "cpm"
                 ? `≈ ${Math.round(budgetUsd / RATES.cpm.costPerImpression).toLocaleString()} impressions`
                 : `≈ ${Math.round(budgetUsd / RATES.cpc.costPerClick).toLocaleString()} clicks`}
             </p>
+            {pref === "inr" && <p className="text-xs text-muted-foreground"><InrHint usd={budgetUsd} pref={pref} rate={rate} /></p>}
           </Field>
           <Button type="submit" className="w-full" disabled={busy || budgetUsd > wallet}>
             {busy ? "Reviewing…" : budgetUsd > wallet ? "Add funds to launch" : "Submit campaign"}
@@ -328,15 +332,14 @@ function PreviewBar({ bg, defaultText, label, text, color }: { bg: string; defau
       <span className="w-16 shrink-0 text-[10px] text-muted-foreground">{label}</span>
       <div className="flex flex-1 items-center justify-end gap-3 rounded px-3 py-1.5 font-mono text-xs" style={{ background: bg }}>
         <span style={{ color: color ?? defaultText }}>📣 {text}</span>
-        <span style={{ color: "#3fb950" }}>$0.04 cr</span>
+        <span style={{ color: "#3fb950" }}>$0.04</span>
       </div>
     </div>
   );
 }
 
-function WalletPanel({ wallet, currency, rate, pref, canChange, onTopUp }: {
-  wallet: number; currency: Currency; rate: number; pref: Currency | null;
-  canChange: boolean; onTopUp: () => Promise<void>;
+function WalletPanel({ wallet, pref, rate, canChange, onTopUp }: {
+  wallet: number; pref: Currency | null; rate: number; canChange: boolean; onTopUp: () => Promise<void>;
 }) {
   const [open, setOpen] = useState(false);
   return (
@@ -346,7 +349,8 @@ function WalletPanel({ wallet, currency, rate, pref, canChange, onTopUp }: {
         <CardDescription>Prepaid balance used to fund campaigns.</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="text-3xl font-bold">{fmt(wallet, currency, rate)}</div>
+        <div className="text-3xl font-bold">{fmt(wallet, "usd", rate)}</div>
+        {pref === "inr" && <div className="text-sm"><InrHint usd={wallet} pref={pref} rate={rate} /></div>}
         <Button className="mt-4 w-full" onClick={() => setOpen(true)}><Plus className="h-4 w-4" /> Add funds</Button>
         {open && (
           <AddFundsDialog onClose={() => setOpen(false)} onDone={onTopUp}
@@ -362,10 +366,10 @@ function AddFundsDialog({ onClose, onDone, pref, rate, canChange }: {
   pref: Currency | null; rate: number; canChange: boolean;
 }) {
   // If a currency is locked, fund in it only. Otherwise let them pick (the first
-  // top-up locks it for 30 days).
+  // top-up locks the rail for 30 days). Conversion is always at the live rate.
   const [currency, setCurrency] = useState<Currency>(pref ?? "usd");
   const locked = !canChange && pref != null;
-  const [amount, setAmount] = useState(currency === "inr" ? "4150" : "50");
+  const [amount, setAmount] = useState(currency === "inr" ? "4500" : "50");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
@@ -415,10 +419,11 @@ function AddFundsDialog({ onClose, onDone, pref, rate, canChange }: {
                 <Button type="button" variant={currency === "usd" ? "default" : "outline"} size="sm" className="flex-1"
                   onClick={() => { setCurrency("usd"); setAmount("50"); }}>$ USD</Button>
                 <Button type="button" variant={currency === "inr" ? "default" : "outline"} size="sm" className="flex-1"
-                  onClick={() => { setCurrency("inr"); setAmount("4150"); }}>₹ INR</Button>
+                  onClick={() => { setCurrency("inr"); setAmount("4500"); }}>₹ INR</Button>
               </div>
               <p className="rounded-md bg-amber-500/10 px-3 py-2 text-xs text-amber-600 dark:text-amber-400">
-                ⚠️ Your billing currency locks for 30 days at today&apos;s rate once you add funds.
+                ⚠️ Your billing currency locks for 30 days once you add funds. Top-ups always
+                convert at the live exchange rate.
               </p>
             </>
           )}
@@ -427,7 +432,7 @@ function AddFundsDialog({ onClose, onDone, pref, rate, canChange }: {
             <Input type="number" min={0} value={amount} onChange={(e) => setAmount(e.target.value)} />
             {currency === "inr" && (
               <p className="text-xs text-muted-foreground">
-                Rate $1 = ₹{rate.toFixed(2)} · credits ≈ ${(toUsd(Number(amount) || 0, "inr", rate)).toFixed(2)} to your wallet
+                Live rate $1 = ₹{rate.toFixed(2)} · credits ≈ ${(toUsd(Number(amount) || 0, "inr", rate)).toFixed(2)} to your wallet
               </p>
             )}
           </div>
@@ -442,8 +447,8 @@ function AddFundsDialog({ onClose, onDone, pref, rate, canChange }: {
   );
 }
 
-function CampaignRow({ c, wallet, currency, rate, onChanged }: {
-  c: Campaign; wallet: number; currency: Currency; rate: number; onChanged: () => Promise<void>;
+function CampaignRow({ c, wallet, pref, rate, onChanged }: {
+  c: Campaign; wallet: number; pref: Currency | null; rate: number; onChanged: () => Promise<void>;
 }) {
   const [busy, setBusy] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -483,7 +488,8 @@ function CampaignRow({ c, wallet, currency, rate, onChanged }: {
           </div>
           <div className="shrink-0 text-right text-sm">
             <div className="font-mono">{(c.impressions ?? 0).toLocaleString()} impr · {(c.clicks ?? 0).toLocaleString()} clk</div>
-            <div className="text-muted-foreground">{fmt(c.budget_remaining ?? 0, currency, rate)} left</div>
+            <div className="text-muted-foreground">{fmt(c.budget_remaining ?? 0, "usd", rate)} left</div>
+            <div className="text-xs"><InrHint usd={c.budget_remaining ?? 0} pref={pref} rate={rate} /></div>
           </div>
         </div>
 
@@ -512,15 +518,15 @@ function CampaignRow({ c, wallet, currency, rate, onChanged }: {
       </CardContent>
 
       {editing && (
-        <EditCampaignDialog c={c} wallet={wallet} currency={currency} rate={rate}
+        <EditCampaignDialog c={c} wallet={wallet} pref={pref} rate={rate}
           onClose={() => setEditing(false)} onDone={onChanged} />
       )}
     </Card>
   );
 }
 
-function EditCampaignDialog({ c, wallet, currency, rate, onClose, onDone }: {
-  c: Campaign; wallet: number; currency: Currency; rate: number;
+function EditCampaignDialog({ c, wallet, pref, rate, onClose, onDone }: {
+  c: Campaign; wallet: number; pref: Currency | null; rate: number;
   onClose: () => void; onDone: () => Promise<void>;
 }) {
   const [text, setText] = useState(c.text);
@@ -530,7 +536,8 @@ function EditCampaignDialog({ c, wallet, currency, rate, onClose, onDone }: {
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<{ ok: boolean; msg: string } | null>(null);
 
-  const addUsd = toUsd(Number(addBudget) || 0, currency, rate);
+  // Top-up entered directly in USD (the wallet's unit).
+  const addUsd = Number(addBudget) || 0;
 
   async function save() {
     if (addUsd > wallet) { setResult({ ok: false, msg: "Top-up exceeds wallet balance." }); return; }
@@ -566,9 +573,12 @@ function EditCampaignDialog({ c, wallet, currency, rate, onClose, onDone }: {
           <Field label="Ad text (max 120 chars)"><Input maxLength={120} value={text} onChange={(e) => setText(e.target.value)} /></Field>
           <Field label="Destination URL"><Input type="url" value={url} onChange={(e) => setUrl(e.target.value)} /></Field>
           <Field label="Description"><Textarea value={description} onChange={(e) => setDescription(e.target.value)} /></Field>
-          <Field label={`Add budget (${symbol(currency)})`}>
+          <Field label="Add budget ($)">
             <Input type="number" min={0} value={addBudget} onChange={(e) => setAddBudget(e.target.value)} />
-            <p className="text-xs text-muted-foreground">Wallet: {fmt(wallet, currency, rate)} available</p>
+            <p className="text-xs text-muted-foreground">
+              Wallet: {fmt(wallet, "usd", rate)} available{" "}
+              {pref === "inr" && addUsd > 0 && <>· <InrHint usd={addUsd} pref={pref} rate={rate} /></>}
+            </p>
           </Field>
           {result && (
             <div className={`flex items-start gap-2 rounded-md p-2 text-sm ${result.ok ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-destructive/10 text-destructive"}`}>

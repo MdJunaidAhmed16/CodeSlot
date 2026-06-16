@@ -5,13 +5,12 @@ import { useRouter } from "next/navigation";
 import { type Account, getAccount, deleteAccount, devSignOut } from "@/lib/api";
 import { getSupabase, supabaseConfigured } from "@/lib/supabase";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { type Currency, fmt } from "@/lib/currency";
+import { type Currency, fmt, inrHint } from "@/lib/currency";
 import { Button } from "@/components/ui/button";
 import { LogOut, Trash2, ChevronDown, Coins, Lock } from "lucide-react";
 
-export function ProfileMenu({ email, currency, rate, pref, canChange, lockedUntil, onSetCurrency }: {
+export function ProfileMenu({ email, rate, pref, canChange, lockedUntil, onSetCurrency }: {
   email: string | null;
-  currency: Currency;
   rate: number;
   pref: Currency | null;
   canChange: boolean;
@@ -28,8 +27,12 @@ export function ProfileMenu({ email, currency, rate, pref, canChange, lockedUnti
   const [curErr, setCurErr] = useState<string | null>(null);
   const ref = useRef<HTMLDivElement>(null);
 
+  // The toggle reflects the locked payment rail (`pref`); the wallet is always
+  // shown in USD (its true unit), with a live ₹ hint for INR advertisers.
+  const rail: Currency = pref ?? "usd";
+
   async function setCurrency(c: Currency) {
-    if (c === currency || !canChange) return;
+    if (c === rail || !canChange) return;
     setBusyCur(true);
     setCurErr(null);
     try {
@@ -103,7 +106,11 @@ export function ProfileMenu({ email, currency, rate, pref, canChange, lockedUnti
           </div>
 
           <div className="my-1 grid grid-cols-2 gap-2 px-2">
-            <Stat label="Wallet" value={account ? fmt(account.wallet_usd, currency, rate) : "—"} />
+            <Stat
+              label="Wallet"
+              value={account ? fmt(account.wallet_usd, "usd", rate) : "—"}
+              sub={account && rail === "inr" ? inrHint(account.wallet_usd, rate) : undefined}
+            />
             <Stat label="Campaigns" value={account ? String(account.campaigns) : "—"} />
           </div>
 
@@ -118,8 +125,8 @@ export function ProfileMenu({ email, currency, rate, pref, canChange, lockedUnti
                     onClick={() => void setCurrency(c)}
                     className={
                       "px-2 py-1 disabled:opacity-60 " +
-                      (currency === c ? "bg-primary text-primary-foreground" : "") +
-                      (!canChange && currency !== c ? " hidden" : "")
+                      (rail === c ? "bg-primary text-primary-foreground" : "") +
+                      (!canChange && rail !== c ? " hidden" : "")
                     }>
                     {c === "usd" ? "$ USD" : "₹ INR"}
                   </button>
@@ -130,11 +137,11 @@ export function ProfileMenu({ email, currency, rate, pref, canChange, lockedUnti
               {!canChange && pref ? (
                 <>
                   <Lock className="mt-0.5 h-3 w-3 shrink-0" />
-                  Locked at $1 = ₹{rate.toFixed(2)} until {lockedUntil?.toISOString().slice(0, 10)}.
-                  We freeze your currency &amp; rate for 30 days so your balance stays consistent.
+                  You pay in {pref === "inr" ? "₹ INR" : "$ USD"} until {lockedUntil?.toISOString().slice(0, 10)}.
+                  Your balance is held in USD; top-ups convert at the live rate (today $1 = ₹{rate.toFixed(2)}).
                 </>
               ) : (
-                <>Choosing locks your billing currency &amp; today&apos;s exchange rate for 30 days.</>
+                <>Choosing locks your billing currency for 30 days. Top-ups always convert at the live rate.</>
               )}
             </p>
             {curErr && <p className="mt-1 text-xs text-destructive">{curErr}</p>}
@@ -170,11 +177,12 @@ export function ProfileMenu({ email, currency, rate, pref, canChange, lockedUnti
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+function Stat({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
     <div className="rounded-md border p-2 text-center">
       <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</div>
       <div className="text-sm font-semibold">{value}</div>
+      {sub && <div className="text-[10px] text-muted-foreground">{sub}</div>}
     </div>
   );
 }

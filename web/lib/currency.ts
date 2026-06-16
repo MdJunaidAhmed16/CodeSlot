@@ -1,11 +1,13 @@
 "use client";
 
-// The wallet & billing are denominated in USD (base currency). An advertiser
-// picks a billing currency (USD/INR) which is LOCKED for 30 days, and the
-// USD→INR rate is FROZEN at selection time (stored server-side) — so the
-// displayed balance never drifts and conversions stay consistent. These are
-// pure helpers; the current currency + frozen rate are owned by the portal
-// (sourced from the server) and passed in.
+// The wallet & billing are denominated in USD (the unit ads are priced in).
+// USD is what we display — it never drifts. An advertiser picks a billing
+// currency (USD/INR) which is the PAYMENT RAIL, locked for 30 days so checkout
+// stays consistent. INR top-ups convert at the LIVE rate at the moment of
+// payment (the real-money moment), so the platform carries no FX risk and the
+// credited USD always matches the rupees actually received. For INR advertisers
+// we show a clearly-live "≈ ₹X" hint next to the USD figure. These are pure
+// helpers; the live rate is owned by the portal and passed in.
 export type Currency = "usd" | "inr";
 
 const API_BASE = (
@@ -16,6 +18,7 @@ export const symbol = (c: Currency) => (c === "inr" ? "₹" : "$");
 export const fromUsd = (usd: number, c: Currency, rate: number) => (c === "inr" ? usd * rate : usd);
 export const toUsd = (amt: number, c: Currency, rate: number) => (c === "inr" ? amt / rate : amt);
 
+/** Format an amount held in USD, in the given currency. */
 export function fmt(usd: number, c: Currency, rate: number): string {
   const v = fromUsd(usd, c, rate);
   return c === "inr"
@@ -23,7 +26,11 @@ export function fmt(usd: number, c: Currency, rate: number): string {
     : "$" + v.toFixed(2);
 }
 
-/** Today's USD→INR (live) — used only as a preview before a rate is locked. */
+/** A clearly-live secondary hint, e.g. "≈ ₹4,150" — only shown to INR rails. */
+export const inrHint = (usd: number, rate: number) =>
+  "≈ ₹" + Math.round(usd * rate).toLocaleString("en-IN");
+
+/** Today's live USD→INR rate (from the backend, which charges at the same rate). */
 export async function fetchLiveRate(): Promise<number> {
   try {
     const r = await fetch(`${API_BASE}/fx-rate`);
@@ -35,5 +42,5 @@ export async function fetchLiveRate(): Promise<number> {
   } catch {
     /* fallback */
   }
-  return 83;
+  return 90;
 }

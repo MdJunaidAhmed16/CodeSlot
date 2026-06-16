@@ -40,29 +40,30 @@ Deno.serve(async (req) => {
       ? body.currency
       : currencyForCountry(typeof body.country === "string" ? body.country : null);
 
-  // Honor the advertiser's locked billing currency + frozen rate. The currency
-  // is locked for 30 days (see advertiser-account); the first top-up sets it.
+  // Honor the advertiser's locked billing currency (the payment RAIL). The
+  // currency is locked for 30 days (see advertiser-account); the first top-up
+  // sets it. The FX rate is ALWAYS live — conversion happens at the real-money
+  // moment, so the credited USD matches the rupees actually received and the
+  // platform carries no FX risk.
   const { data: adv } = await db
     .from("advertisers")
-    .select("currency_pref, fx_rate_locked")
+    .select("currency_pref")
     .eq("id", advertiserId)
     .single();
 
+  const fxRate = await getUsdInrRate();
   let currency: Currency;
-  let fxRate: number;
   if (adv?.currency_pref) {
     currency = adv.currency_pref as Currency;
     if (requested !== currency) {
       return error(`your billing currency is locked to ${currency.toUpperCase()}`, 409);
     }
-    fxRate = Number(adv.fx_rate_locked) || (await getUsdInrRate());
   } else {
-    // First top-up locks the currency + freezes today's rate.
+    // First top-up locks the currency rail for 30 days (rate stays live).
     currency = requested;
-    fxRate = await getUsdInrRate();
     await db
       .from("advertisers")
-      .update({ currency_pref: currency, currency_pref_set_at: new Date().toISOString(), fx_rate_locked: fxRate })
+      .update({ currency_pref: currency, currency_pref_set_at: new Date().toISOString(), fx_rate_locked: null })
       .eq("id", advertiserId);
   }
 
