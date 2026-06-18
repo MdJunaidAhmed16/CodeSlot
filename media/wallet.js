@@ -9,13 +9,19 @@
   // Display currency + live rate, pushed by the host (defaults to USD).
   const disp = { currency: "usd", rate: 1 };
 
-  /** Whole credits → real money in the developer's display currency. */
+  /** Whole credits → real money in the display currency. Adaptive precision so
+   *  a single impression's fraction-of-a-rupee earning never shows as ₹0. */
   function money(credits) {
     const usd = Number(credits) * CREDIT_USD;
+    const val = disp.currency === "inr" ? usd * disp.rate : usd;
     if (disp.currency === "inr") {
-      return "₹" + Math.round(usd * disp.rate).toLocaleString("en-IN");
+      if (val === 0) return "₹0";
+      if (val >= 1) return "₹" + Math.round(val).toLocaleString("en-IN");
+      return "₹" + val.toFixed(val >= 0.1 ? 2 : val >= 0.01 ? 3 : 4);
     }
-    return "$" + usd.toFixed(2);
+    if (val === 0) return "$0.00";
+    if (val >= 0.01) return "$" + val.toFixed(2);
+    return "$" + val.toFixed(val >= 0.001 ? 3 : 4);
   }
   function cr(credits) {
     return Math.round(Number(credits)).toLocaleString("en-US") + " cr";

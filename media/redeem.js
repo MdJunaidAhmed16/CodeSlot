@@ -27,12 +27,18 @@
   }
   // The developer's balance in their display currency (₹ uses the live rate).
   // The redemption breakdown itself stays in USD — the OpenRouter key is USD.
+  // Adaptive precision so small balances don't render as ₹0 / $0.00.
   function bal(credits) {
     const inUsd = Number(credits) * state.creditUsd;
+    const val = state.currency === "inr" ? inUsd * state.rate : inUsd;
     if (state.currency === "inr") {
-      return "₹" + Math.round(inUsd * state.rate).toLocaleString("en-IN");
+      if (val === 0) return "₹0";
+      if (val >= 1) return "₹" + Math.round(val).toLocaleString("en-IN");
+      return "₹" + val.toFixed(val >= 0.1 ? 2 : val >= 0.01 ? 3 : 4);
     }
-    return money(inUsd);
+    if (val === 0) return "$0.00";
+    if (val >= 0.01) return "$" + val.toFixed(2);
+    return "$" + val.toFixed(val >= 0.001 ? 3 : 4);
   }
   function cr(credits) {
     return Math.round(Number(credits)).toLocaleString("en-US") + " cr";

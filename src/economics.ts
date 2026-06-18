@@ -39,16 +39,26 @@ export type DisplayCurrency = "usd" | "inr";
  * Format a USD amount as real money in the developer's display currency.
  * Earnings lead with money (this) so the value feels tangible; raw credits are
  * shown only as a small secondary note via {@link formatCredits}.
+ *
+ * Precision is adaptive: a single impression earns a fraction of a rupee/cent,
+ * so amounts under one unit get extra decimals — otherwise tiny-but-real
+ * earnings would collapse to "₹0" / "$0.00". Whole amounts stay clean.
  */
 export function formatMoney(
   usd: number,
   currency: DisplayCurrency = "usd",
   rate = 1
 ): string {
+  const val = currency === "inr" ? usd * rate : usd;
   if (currency === "inr") {
-    return "₹" + Math.round(usd * rate).toLocaleString("en-IN");
+    if (val === 0) return "₹0";
+    if (val >= 1) return "₹" + Math.round(val).toLocaleString("en-IN");
+    const d = val >= 0.1 ? 2 : val >= 0.01 ? 3 : 4;
+    return "₹" + val.toFixed(d);
   }
-  return "$" + usd.toFixed(2);
+  if (val === 0) return "$0.00";
+  if (val >= 0.01) return "$" + val.toFixed(2);
+  return "$" + val.toFixed(val >= 0.001 ? 3 : 4);
 }
 
 /** Format whole credits as real money, e.g. 5_000 → "$5.00" / "₹474". */
