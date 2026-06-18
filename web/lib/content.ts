@@ -13,7 +13,7 @@ export const PRICING: {
 }[] = [
   {
     name: "Status Bar",
-    price: "$10",
+    price: "$6",
     unit: "CPM",
     blurb: "Your sponsored message in the VS Code status bar — seen while developers actively code.",
     features: ["1,000 impressions", "~0.5–1% CTR", "Brand color + logo", "Self-serve, auto-approved"],
@@ -61,7 +61,7 @@ export const HOW_IT_WORKS = [
 
 export const MODEL_POINTS = [
   { stat: "1 credit = $0.001", label: "Transparent reward unit for developers" },
-  { stat: "$10 CPM", label: "Launch rate — below dev-newsletter benchmarks" },
+  { stat: "$6 CPM", label: "Launch rate — well below dev-newsletter benchmarks" },
   { stat: "GitHub-verified", label: "Every earning account is a real developer" },
   { stat: "Privacy-first", label: "We never read code, files, or projects" },
 ];

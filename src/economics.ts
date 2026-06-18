@@ -14,10 +14,12 @@ export const MIN_REDEEM_CREDITS = 5_000;
 /** Platform fee applied at redemption (on top of the earn-side margin). */
 export const PLATFORM_FEE_RATE = 0.05;
 
-/** Default per-event developer rewards, in credits (see §3). */
+/** Reference per-event developer rewards, in credits. The authoritative values
+ *  live in the backend rate card (_shared/economics.ts) and are sent per ad;
+ *  these are kept only for documentation. */
 export const REWARD = {
-  impression: 5, // ~$0.005 — ~45–50% pass-through of a $10 CPM
-  click: 75, // ~$0.075 — pass-through of $0.15–0.30 CPC
+  impression: 4, // $0.004 — ~67% of the $6 launch CPM
+  click: 90, // $0.09 — ~30% of the $0.30 CPC
 } as const;
 
 export function creditsToUsd(credits: number): number {

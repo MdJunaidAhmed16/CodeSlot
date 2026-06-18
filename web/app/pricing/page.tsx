@@ -51,7 +51,7 @@ export default function PricingPage() {
 
           <p className="mx-auto mt-10 max-w-2xl text-sm text-muted-foreground">
             Each campaign is billed <b>either</b> by impressions (CPM) <b>or</b> by clicks (CPC) — never both.
-            Developers earn AI credits on the billed event (~40% of impression value, ~30% of click
+            Developers earn AI credits on the billed event (~65% of impression value, ~30% of click
             value; 1 credit = $0.001). See <Link href="/how-it-works" className="text-primary underline-offset-4 hover:underline">how it works</Link>.
           </p>
         </section>

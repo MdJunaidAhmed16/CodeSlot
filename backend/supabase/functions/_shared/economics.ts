@@ -16,8 +16,10 @@ export function creditsToUsd(credits: number): number {
 export type BillingModel = "cpm" | "cpc";
 
 export const RATE_CARD = {
-  // $10 CPM ($0.01/impression); developer earns 4 credits = 40%.
-  cpm: { cost_per_impression: 0.01, reward_per_impression: 4 },
+  // $6 CPM ($0.006/impression) — launch rate, kept low to attract early
+  // advertisers. Developer reward is held at 4 credits ($0.004 = ~67%); the
+  // platform keeps ~$0.002 (~33%). Raise the cost later as reach grows.
+  cpm: { cost_per_impression: 0.006, reward_per_impression: 4 },
   // $0.30 CPC; developer earns 90 credits = $0.09 = 30%.
   cpc: { cost_per_click: 0.30, reward_per_click: 90 },
 } as const;

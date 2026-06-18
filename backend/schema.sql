@@ -85,9 +85,9 @@ create table if not exists ads (
   budget_remaining    numeric not null default 0 check (budget_remaining >= 0),
   -- Defaults below are the CPM rate card; CPC campaigns override these so the
   -- unbilled side is 0 (no charge, no reward).
-  cost_per_impression numeric not null default 0.01 check (cost_per_impression >= 0),  -- $10 CPM
-  cost_per_click      numeric not null default 0    check (cost_per_click >= 0),
-  reward_per_impression numeric not null default 4  check (reward_per_impression >= 0),  -- credits (40%)
+  cost_per_impression numeric not null default 0.006 check (cost_per_impression >= 0),  -- $6 CPM (launch rate)
+  cost_per_click      numeric not null default 0     check (cost_per_click >= 0),
+  reward_per_impression numeric not null default 4   check (reward_per_impression >= 0),  -- credits (~67% of $6 CPM)
   reward_per_click      numeric not null default 0  check (reward_per_click >= 0),        -- credits
   active              boolean not null default true,
   constraint ads_url_scheme check (url ~* '^https?://'),

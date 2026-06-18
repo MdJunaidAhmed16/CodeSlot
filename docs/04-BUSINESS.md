@@ -36,7 +36,7 @@ CodeSlot differentiates via:
 | Premium surfaces | Higher rates for sidebar/idle panel placements (less intrusive, higher engagement) | v2 |
 | Self-serve ad platform | Advertisers self-manage campaigns, budgets, targeting | v3 |
 
-**Take rate**: CodeSlot keeps a margin between what advertisers pay and what's distributed as developer credits (e.g., advertiser pays $0.01/impression, developer earns $0.005 in credit value, CodeSlot margin covers OpenRouter redemption cost + platform operation).
+**Take rate**: CodeSlot keeps a margin between what advertisers pay and what's distributed as developer credits (e.g., at the $6 launch CPM the advertiser pays $0.006/impression, the developer earns $0.004 in credit value, and CodeSlot's ~$0.002 margin covers OpenRouter redemption cost + platform operation).
 
 ## 4. Go-to-Market
 

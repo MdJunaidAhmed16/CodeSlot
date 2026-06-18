@@ -114,8 +114,8 @@ create table ads (
   url text not null,
   weight int default 1,           -- relative frequency in rotation
   budget_remaining numeric,         -- in credits, decrements per impression/click
-  cost_per_impression numeric default 0.01,
-  cost_per_click numeric default 0.10,
+  cost_per_impression numeric default 0.006,
+  cost_per_click numeric default 0.30,
   active boolean default true,
   created_at timestamptz default now()
 );

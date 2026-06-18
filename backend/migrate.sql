@@ -50,6 +50,8 @@ alter table ads add column if not exists brand_color text;
 alter table ads add column if not exists logo_url text;
 alter table ads add column if not exists billing_model text not null default 'cpm';
 -- Rate-card defaults (only affect NEW inserts; existing rows keep their values).
+-- CPM cost lowered to the $6 launch rate; dev reward held at 4 credits.
+alter table ads alter column cost_per_impression set default 0.006;
 alter table ads alter column cost_per_click set default 0;
 alter table ads alter column reward_per_impression set default 4;
 alter table ads alter column reward_per_click set default 0;
