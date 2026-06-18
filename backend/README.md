@@ -75,7 +75,8 @@ psql "$SUPABASE_DB_URL" -f migrate.sql   # or paste migrate.sql in the SQL edito
 
 # 3. Deploy functions
 supabase functions deploy auth serve-ad track-event balance redeem-credits \
-  delete-data advertiser-campaigns payment-create payment-webhook-stripe \
+  redeem-models delete-data fx-rate advertiser-account advertiser-campaigns \
+  advertiser-analytics payment-create payment-webhook-stripe \
   payment-webhook-razorpay admin-metrics admin-ads admin-flags
 
 # 4. Grant yourself admin (after signing in once from the extension/dashboard)

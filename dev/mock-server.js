@@ -214,6 +214,19 @@ const server = http.createServer(async (req, res) => {
     if (path === "fx-rate" && req.method === "GET") {
       return send(res, 200, { usd_inr: await getMockRate() });
     }
+    // GET /redeem-models (public) — static, price-aware catalog for local dev.
+    if (path === "redeem-models" && req.method === "GET") {
+      return send(res, 200, { models: [
+        { id: "anthropic/claude-sonnet-4.5", name: "Claude Sonnet 4.5", vendor: "Anthropic", context: 200000, price_in: 3, price_out: 15 },
+        { id: "openai/gpt-4o", name: "GPT-4o", vendor: "OpenAI", context: 128000, price_in: 2.5, price_out: 10 },
+        { id: "google/gemini-2.0-flash", name: "Gemini 2.0 Flash", vendor: "Google", context: 1000000, price_in: 0.1, price_out: 0.4 },
+        { id: "x-ai/grok-2", name: "Grok 2", vendor: "xAI", context: 131072, price_in: 2, price_out: 10 },
+        { id: "deepseek/deepseek-v3", name: "DeepSeek V3", vendor: "DeepSeek", context: 64000, price_in: 0.27, price_out: 1.1 },
+        { id: "meta-llama/llama-3.3-70b-instruct", name: "Llama 3.3 70B", vendor: "Meta", context: 131072, price_in: 0, price_out: 0, freeTier: true },
+        { id: "mistralai/mistral-large", name: "Mistral Large", vendor: "Mistral", context: 128000, price_in: 2, price_out: 6 },
+        { id: "qwen/qwen-2.5-72b-instruct", name: "Qwen 2.5 72B", vendor: "Qwen", context: 131072, price_in: 0.35, price_out: 0.4 },
+      ], cached: false });
+    }
 
     // GET /serve-ad (anonymous)
     if (path === "serve-ad" && req.method === "GET") {

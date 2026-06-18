@@ -32,6 +32,7 @@ body {
 .model.selected { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold) inset; }
 .model .name { font-weight: 600; font-size: 14px; }
 .model .vendor { color: var(--vscode-descriptionForeground); font-size: 12px; font-family: var(--vscode-editor-font-family); }
+.model .spec { margin-top: 4px; font-size: 10px; color: var(--vscode-descriptionForeground); opacity: 0.85; font-family: var(--vscode-editor-font-family); }
 .model .free { position: absolute; top: 10px; right: 10px; font-size: 9px; color: var(--green); border: 1px solid var(--green); border-radius: 4px; padding: 1px 5px; }
 .model .check { position: absolute; top: 10px; right: 10px; color: var(--gold); display: none; }
 .model.selected .check { display: block; }

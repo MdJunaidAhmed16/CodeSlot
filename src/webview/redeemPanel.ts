@@ -8,16 +8,17 @@ import {
   PLATFORM_FEE_RATE,
 } from "../economics";
 import { resolveMoney } from "../money";
+import type { RedeemModel } from "../types";
 
-/** Models the user can redeem credits toward (mirrors the redeem mockup). */
-const MODELS = [
+/** Offline fallback if the live OpenRouter catalog can't be fetched. */
+const FALLBACK_MODELS: RedeemModel[] = [
   { id: "anthropic/claude-sonnet-4.5", name: "Claude Sonnet 4.5", vendor: "Anthropic" },
   { id: "openai/gpt-4o", name: "GPT-4o", vendor: "OpenAI" },
   { id: "google/gemini-1.5-pro", name: "Gemini 1.5 Pro", vendor: "Google" },
   { id: "mistralai/mistral-large", name: "Mistral Large", vendor: "Mistral" },
   { id: "meta-llama/llama-3.1-405b", name: "Llama 3.1 405B", vendor: "Meta", freeTier: true },
   { id: "deepseek/deepseek-v3", name: "DeepSeek V3", vendor: "DeepSeek" },
-] as const;
+];
 
 /**
  * The 3-step "Redeem Credits → AI Tokens" flow.
@@ -31,6 +32,7 @@ export class RedeemPanel {
   private static current: RedeemPanel | undefined;
   private readonly disposables: vscode.Disposable[] = [];
   private busy = false;
+  private models: RedeemModel[] = FALLBACK_MODELS;
 
   static show(extensionUri: vscode.Uri, api: ApiClient): void {
     if (RedeemPanel.current) {
@@ -106,10 +108,19 @@ export class RedeemPanel {
     } catch {
       // Show the form anyway; confirm will re-check server-side.
     }
+    // Live, price-aware catalog; fall back to the static list on any failure.
+    try {
+      const { models } = await this.api.redeemModels();
+      if (Array.isArray(models) && models.length > 0) {
+        this.models = models;
+      }
+    } catch {
+      this.models = FALLBACK_MODELS;
+    }
     const money = await resolveMoney(this.api);
     this.post({
       type: "init",
-      models: MODELS,
+      models: this.models,
       balanceCredits,
       minCredits: MIN_REDEEM_CREDITS,
       creditUsd: creditsToUsd(1),
@@ -123,7 +134,7 @@ export class RedeemPanel {
     if (this.busy) {
       return;
     }
-    const model = MODELS.find((x) => x.id === modelId);
+    const model = this.models.find((x) => x.id === modelId);
     if (!model) {
       this.post({ type: "result", ok: false, message: "Unknown model." });
       return;

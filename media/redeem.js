@@ -37,6 +37,22 @@
   function cr(credits) {
     return Math.round(Number(credits)).toLocaleString("en-US") + " cr";
   }
+
+  // "$3 / $15 per 1M · 200K ctx" from a price-aware catalog entry; "" if absent.
+  function modelSpec(m) {
+    const parts = [];
+    if (m.freeTier) {
+      parts.push("Free");
+    } else if (typeof m.price_in === "number") {
+      const out = typeof m.price_out === "number" ? " / $" + m.price_out : "";
+      parts.push("$" + m.price_in + out + " per 1M");
+    }
+    if (m.context) {
+      const k = m.context >= 1e6 ? m.context / 1e6 + "M" : Math.round(m.context / 1000) + "K";
+      parts.push(k + " ctx");
+    }
+    return parts.join(" · ");
+  }
   function belowMin() {
     return state.amountCredits < state.minCredits;
   }
@@ -78,6 +94,15 @@
       vendor.textContent = m.vendor;
       btn.appendChild(name);
       btn.appendChild(vendor);
+
+      // Live, price-aware spec line (only when the catalog provides it).
+      const specText = modelSpec(m);
+      if (specText) {
+        const spec = document.createElement("div");
+        spec.className = "spec";
+        spec.textContent = specText;
+        btn.appendChild(spec);
+      }
 
       if (m.freeTier) {
         const tag = document.createElement("span");

@@ -3,6 +3,7 @@ import { isAcceptableBackendUrl, isValidUuid } from "../util/validation";
 import type {
   BalanceResponse,
   EventType,
+  RedeemModel,
   RedeemResponse,
   ServeAdResponse,
   TrackEventResponse,
@@ -133,6 +134,13 @@ export class ApiClient {
   /** Public live USD→INR rate (no auth) — used to show earnings in ₹. */
   fxRate(): Promise<{ usd_inr: number }> {
     return this.request<{ usd_inr: number }>("fx-rate", { method: "GET" });
+  }
+
+  /** Public, price-aware OpenRouter model catalog for the redeem picker. */
+  redeemModels(): Promise<{ models: RedeemModel[] }> {
+    return this.request<{ models: RedeemModel[] }>("redeem-models", {
+      method: "GET",
+    });
   }
 
   redeem(args: {

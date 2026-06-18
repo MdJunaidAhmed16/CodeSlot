@@ -55,6 +55,17 @@ export interface RecentEvent {
   created_at: string;
 }
 
+/** A model in the redeem picker (from GET /redeem-models, live + price-aware). */
+export interface RedeemModel {
+  id: string;
+  name: string;
+  vendor: string;
+  context?: number; // context window in tokens
+  price_in?: number; // USD per 1M prompt tokens
+  price_out?: number; // USD per 1M completion tokens
+  freeTier?: boolean;
+}
+
 /** Response from POST /redeem-credits. */
 export interface RedeemResponse {
   success: boolean;
