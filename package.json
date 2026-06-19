@@ -25,8 +25,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/junaidbuilds/codeslot"
+    "url": "https://github.com/MdJunaidAhmed16/CodeSlot.git"
   },
+  "bugs": {
+    "url": "https://github.com/MdJunaidAhmed16/CodeSlot/issues"
+  },
+  "homepage": "https://github.com/MdJunaidAhmed16/CodeSlot#readme",
+  "pricing": "Free",
+  "qna": "marketplace",
   "activationEvents": [
     "onStartupFinished"
   ],
@@ -84,7 +90,11 @@
         },
         "codeslot.displayCurrency": {
           "type": "string",
-          "enum": ["auto", "usd", "inr"],
+          "enum": [
+            "auto",
+            "usd",
+            "inr"
+          ],
           "enumDescriptions": [
             "Pick automatically from your editor's region (₹ for India, otherwise $).",
             "Show earnings in US dollars ($).",
@@ -111,13 +121,16 @@
     "mock": "node dev/mock-server.js",
     "check-types": "tsc --noEmit",
     "lint": "eslint src --ext ts",
-    "test": "vscode-test"
+    "test": "vscode-test",
+    "vsix": "vsce package",
+    "publish:marketplace": "vsce publish"
   },
   "devDependencies": {
     "@types/node": "20.x",
     "@types/vscode": "^1.85.0",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
     "@typescript-eslint/parser": "^7.0.0",
+    "@vscode/vsce": "^3.9.2",
     "esbuild": "^0.28.1",
     "eslint": "^8.57.0",
     "typescript": "^5.4.0"

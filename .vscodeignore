@@ -1,18 +1,28 @@
+# Ship only: dist/**, media/**, README.md, CHANGELOG.md, LICENSE, package.json.
+# Everything else in this monorepo (site, backend, admin, docs, sources) is excluded.
 .vscode/**
 .vscode-test/**
+.github/**
 src/**
+web/**
+admin/**
 backend/**
+supabase/**
+dev/**
 docs/**
 design-mockups/**
+scripts/**
 node_modules/**
-.gitignore
-.eslintrc.json
+**/*.ts
+**/*.map
 esbuild.js
 tsconfig.json
-**/*.map
-**/*.ts
-.github/**
-scripts/**
-dev/**
-admin/**
+.eslintrc.json
+.gitignore
+.vscodeignore
+.editorconfig
+package-lock.json
+*.vsix
 SECURITY.md
+DEPLOYMENT.md
+**/.DS_Store

@@ -33,10 +33,10 @@ Concretely, the extension:
    to a `💳 $balance` readout.
 3. After ~5 seconds of focused dwell, an impression is counted and you earn a
    small credit.
-3. Click the slot to open the advertiser's link (and earn a click credit).
-4. Open **CodeSlot: Open Wallet** to see your balance, today's earnings, and
+4. Click the slot to open the advertiser's link (and earn a click credit).
+5. Open **CodeSlot: Open Wallet** to see your balance, today's earnings, and
    recent activity.
-5. Run **CodeSlot: Redeem Credits** to convert credits into OpenRouter credit.
+6. Run **CodeSlot: Redeem Credits** to convert credits into OpenRouter credit.
 
 ## Commands
 
@@ -56,6 +56,7 @@ Concretely, the extension:
 | Setting | Default | Description |
 |---|---|---|
 | `codeslot.enabled` | `true` | Show the slot and accrue credits |
+| `codeslot.displayCurrency` | `auto` | Currency your earnings are shown in (`auto` / `usd` / `inr`) |
 | `codeslot.apiBaseUrl` | `""` | Advanced: self-host override (must be `https://`) |
 
 ## Development
