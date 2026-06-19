@@ -145,7 +145,7 @@ export default function PortalPage() {
 function NewCampaign({ wallet, pref, rate, onDone }: {
   wallet: number; pref: Currency | null; rate: number; onDone: () => Promise<void>;
 }) {
-  const [form, setForm] = useState({ advertiser_name: "", text: "", url: "", description: "", budget_remaining: "50" });
+  const [form, setForm] = useState({ advertiser_name: "", text: "", url: "", description: "", budget_remaining: "6" });
   const [billing, setBilling] = useState<BillingModel>("cpm");
   const [useColor, setUseColor] = useState(false);
   const [brandColor, setBrandColor] = useState("#3ecf8e");
@@ -192,7 +192,7 @@ function NewCampaign({ wallet, pref, rate, onDone }: {
       });
       if (r.approved) {
         setResult({ ok: true, msg: "Approved and live! 🎉" });
-        setForm({ advertiser_name: "", text: "", url: "", description: "", budget_remaining: "50" });
+        setForm({ advertiser_name: "", text: "", url: "", description: "", budget_remaining: "6" });
         setLogoUrl("");
       } else {
         setResult({ ok: false, msg: r.reason ?? "Rejected by automated review." });
@@ -385,7 +385,7 @@ function AddFundsDialog({ onClose, onDone, pref, rate, canChange }: {
   // top-up locks the rail for 30 days). Conversion is always at the live rate.
   const [currency, setCurrency] = useState<Currency>(pref ?? "usd");
   const locked = !canChange && pref != null;
-  const [amount, setAmount] = useState(currency === "inr" ? "4500" : "50");
+  const [amount, setAmount] = useState(currency === "inr" ? "900" : "10");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
@@ -433,9 +433,9 @@ function AddFundsDialog({ onClose, onDone, pref, rate, canChange }: {
             <>
               <div className="flex gap-2">
                 <Button type="button" variant={currency === "usd" ? "default" : "outline"} size="sm" className="flex-1"
-                  onClick={() => { setCurrency("usd"); setAmount("50"); }}>$ USD</Button>
+                  onClick={() => { setCurrency("usd"); setAmount("10"); }}>$ USD</Button>
                 <Button type="button" variant={currency === "inr" ? "default" : "outline"} size="sm" className="flex-1"
-                  onClick={() => { setCurrency("inr"); setAmount("4500"); }}>₹ INR</Button>
+                  onClick={() => { setCurrency("inr"); setAmount("900"); }}>₹ INR</Button>
               </div>
               <p className="rounded-md bg-amber-500/10 px-3 py-2 text-xs text-amber-600 dark:text-amber-400">
                 ⚠️ Your billing currency locks for 30 days once you add funds. Top-ups always
