@@ -3,7 +3,7 @@
 // Developer-side web API: GitHub sign-in → CodeSlot session → balance + redeem.
 // Reuses the SAME backend endpoints as the extension (/auth, /balance,
 // /redeem-credits), so the web wallet shows identical data.
-import { getSupabase, supabaseConfigured } from "./supabase";
+import { getUserSupabase, supabaseConfigured } from "./supabase";
 
 const API_BASE = (
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8787"
@@ -67,7 +67,7 @@ async function exchange(githubToken: string) {
 
 /** Production: GitHub via Supabase Auth → redirect back to /user. */
 export async function signInWithGitHub(): Promise<void> {
-  const sb = getSupabase();
+  const sb = getUserSupabase();
   if (!sb) return;
   await sb.auth.signInWithOAuth({
     provider: "github",
@@ -78,7 +78,7 @@ export async function signInWithGitHub(): Promise<void> {
 /** After the OAuth redirect, trade the GitHub provider token for our session. */
 export async function completeGitHubLogin(): Promise<boolean> {
   if (!supabaseConfigured) return false;
-  const sb = getSupabase();
+  const sb = getUserSupabase();
   const { data } = (await sb?.auth.getSession()) ?? { data: { session: null } };
   const gh = data.session?.provider_token;
   if (!gh) return false;

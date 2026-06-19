@@ -12,7 +12,7 @@ import {
   type Balance, type RedeemResult, getBalance, redeem, completeGitHubLogin, userToken,
   userLogin, userSignOut, CREDIT_USD, MIN_REDEEM_CREDITS, REDEEM_MODELS,
 } from "@/lib/userApi";
-import { getSupabase, supabaseConfigured } from "@/lib/supabase";
+import { getUserSupabase, supabaseConfigured } from "@/lib/supabase";
 import { Wallet, LogOut, Coins, MousePointerClick, Eye, Sparkles, Copy, Eye as EyeIcon } from "lucide-react";
 
 const usd = (cr: number) => "$" + (cr * CREDIT_USD).toFixed(2);
@@ -48,7 +48,7 @@ export default function UserDashboard() {
   }, [router, load]);
 
   async function signOut() {
-    if (supabaseConfigured) await getSupabase()?.auth.signOut();
+    if (supabaseConfigured) await getUserSupabase()?.auth.signOut();
     userSignOut();
     router.replace("/user/login");
   }
