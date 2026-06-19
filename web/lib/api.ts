@@ -75,7 +75,9 @@ async function call<T>(path: string, init: RequestInit = {}): Promise<T> {
     } catch {
       /* ignore */
     }
-    throw new Error(msg);
+    const e = new Error(msg) as Error & { status?: number };
+    e.status = res.status;
+    throw e;
   }
   return (await res.json()) as T;
 }
@@ -205,6 +207,19 @@ export const createPayment = (amount: number, currency: Currency) =>
   call<PaymentCreateResult>("payment-create", {
     method: "POST",
     body: JSON.stringify({ amount, currency, country: currency === "inr" ? "IN" : "US" }),
+  });
+
+export interface RazorpaySuccess {
+  razorpay_order_id: string;
+  razorpay_payment_id: string;
+  razorpay_signature: string;
+}
+
+/** Confirm a Razorpay checkout synchronously (credits the wallet immediately). */
+export const verifyPayment = (p: RazorpaySuccess) =>
+  call<{ success: boolean; wallet_usd: number; already: boolean }>("payment-verify", {
+    method: "POST",
+    body: JSON.stringify(p),
   });
 
 export interface Account {

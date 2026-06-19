@@ -80,7 +80,7 @@ supabase secrets set \
 supabase functions deploy \
   auth serve-ad track-event balance redeem-credits redeem-models delete-data \
   fx-rate advertiser-account advertiser-campaigns advertiser-analytics \
-  payment-create payment-webhook-stripe payment-webhook-razorpay \
+  payment-create payment-verify payment-webhook-stripe payment-webhook-razorpay \
   admin-ads admin-metrics admin-flags
 ```
 

@@ -81,3 +81,17 @@ export async function verifyRazorpay(
   const expected = await hmacSha256Hex(secret, rawBody);
   return timingSafeEqual(expected, header);
 }
+
+/** Verify a Razorpay Checkout success signature: HMAC(order_id|payment_id) with
+ *  the KEY SECRET. Used by /payment-verify to confirm a payment synchronously on
+ *  the client callback (the webhook remains the backstop). */
+export async function verifyRazorpayCheckout(
+  orderId: string,
+  paymentId: string,
+  signature: string,
+  keySecret: string
+): Promise<boolean> {
+  if (!orderId || !paymentId || !signature) return false;
+  const expected = await hmacSha256Hex(keySecret, `${orderId}|${paymentId}`);
+  return timingSafeEqual(expected, signature);
+}

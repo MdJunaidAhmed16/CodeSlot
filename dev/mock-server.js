@@ -518,6 +518,16 @@ const server = http.createServer(async (req, res) => {
       return send(res, 200, { provider: "mock", credited: true, amount_usd: amountUsd, wallet_usd: walletOf(sess.advertiserId), currency });
     }
 
+    // POST /payment-verify — mock already credited at payment-create, so this
+    // just acknowledges (mirrors the real synchronous confirm).
+    if (path === "payment-verify" && req.method === "POST") {
+      const h = req.headers["authorization"] || "";
+      const tok = (h.match(/^Bearer\s+(.+)$/i) || [])[1];
+      const sess = tok && advSessions.get(tok);
+      if (!sess) return send(res, 401, { error: "authentication required" });
+      return send(res, 200, { success: true, wallet_usd: walletOf(sess.advertiserId), already: false });
+    }
+
     // ── Admin (auth + is_admin) ──────────────────────────────────
     if (path === "admin-metrics" && req.method === "GET") {
       const s = bearer(req);
