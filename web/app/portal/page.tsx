@@ -27,9 +27,9 @@ import {
 const LOCK_MS = 30 * 24 * 60 * 60 * 1000;
 
 /** Small, clearly-live "≈ ₹X" hint shown to INR-rail advertisers next to USD. */
-function InrHint({ usd, pref, rate, className = "" }: { usd: number; pref: Currency | null; rate: number; className?: string }) {
+function InrHint({ usd, pref, rate, className = "", suffix = " today" }: { usd: number; pref: Currency | null; rate: number; className?: string; suffix?: string }) {
   if (pref !== "inr") return null;
-  return <span className={"text-muted-foreground " + className}>{inrHint(usd, rate)} today</span>;
+  return <span className={"text-muted-foreground " + className}>{inrHint(usd, rate)}{suffix}</span>;
 }
 
 export default function PortalPage() {
@@ -281,18 +281,24 @@ function NewCampaign({ wallet, pref, rate, onDone }: {
             </p>
           </div>
 
-          <Field label="Budget ($)">
+          <Field label="Campaign budget ($)">
             <Input type="number" min={0} value={form.budget_remaining} onChange={set("budget_remaining")} />
             <p className="text-xs text-muted-foreground">
-              Drawn from your wallet ({fmt(wallet, "usd", rate)} available) ·{" "}
+              Reserved from your wallet and spent as your ad runs — it can&apos;t exceed your wallet balance
+              ({fmt(wallet, "usd", rate)} available). At ${billing === "cpm" ? "6 CPM" : "0.30/click"}, ${form.budget_remaining || 0} buys{" "}
               {billing === "cpm"
                 ? `≈ ${Math.round(budgetUsd / RATES.cpm.costPerImpression).toLocaleString()} impressions`
                 : `≈ ${Math.round(budgetUsd / RATES.cpc.costPerClick).toLocaleString()} clicks`}
+              {pref === "inr" && <> · <InrHint usd={budgetUsd} pref={pref} rate={rate} suffix="" /></>}.
             </p>
-            {pref === "inr" && <p className="text-xs text-muted-foreground"><InrHint usd={budgetUsd} pref={pref} rate={rate} /></p>}
+            {budgetUsd > wallet && (
+              <p className="text-xs text-amber-600 dark:text-amber-400">
+                Your wallet has only {fmt(wallet, "usd", rate)}. Add {fmt(budgetUsd - wallet, "usd", rate)} more in the Wallet panel above to launch this budget.
+              </p>
+            )}
           </Field>
-          <Button type="submit" className="w-full" disabled={busy || budgetUsd > wallet}>
-            {busy ? "Reviewing…" : budgetUsd > wallet ? "Add funds to launch" : "Submit campaign"}
+          <Button type="submit" className="w-full" disabled={busy || budgetUsd <= 0 || budgetUsd > wallet}>
+            {busy ? "Reviewing…" : budgetUsd > wallet ? "Add funds to your wallet first" : "Submit campaign"}
           </Button>
           {result && (
             <div className={`flex items-start gap-2 rounded-md p-3 text-sm ${result.ok ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-destructive/10 text-destructive"}`}>
@@ -326,6 +332,12 @@ function AdPreview({ text, color }: { text: string; color: string | null }) {
         <PreviewBar bg="#0d1117" defaultText="#ffffff" label="Dark theme" text={truncated} color={color} />
         <PreviewBar bg="#f3f3f3" defaultText="#1f1f1f" label="Light theme" text={truncated} color={color} />
       </div>
+      {color && (
+        <p className="mt-1 text-[11px] text-muted-foreground">
+          Your brand color tints the text. VS Code doesn&apos;t allow custom backgrounds in the status bar,
+          so pick a color that stays readable on both light and dark themes. Your logo shows in the hover tooltip.
+        </p>
+      )}
     </div>
   );
 }
@@ -408,7 +420,7 @@ function AddFundsDialog({ onClose, onDone, pref, rate, canChange }: {
         <CardHeader>
           <CardTitle>Add funds</CardTitle>
           <CardDescription>
-            Secure checkout (Stripe / Razorpay) · credited to your USD wallet
+            Secure checkout via Razorpay · credited to your USD wallet
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

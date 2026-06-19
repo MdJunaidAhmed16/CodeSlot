@@ -26,7 +26,7 @@ export default function PrivacyPage() {
             <ul className="ml-5 list-disc space-y-1">
               <li><b>Developers:</b> a GitHub-verified account id and ad-interaction events (impression/click) used to credit your wallet. No code or files.</li>
               <li><b>Advertisers:</b> the email/identity from your Google or GitHub sign-in, and the campaign details you submit.</li>
-              <li><b>Payments:</b> processed by Razorpay/Stripe. We never see or store card numbers; we only receive a payment confirmation and amount.</li>
+              <li><b>Payments:</b> processed by Razorpay. We never see or store card numbers; we only receive a payment confirmation and amount.</li>
               <li><b>Logos you upload</b> are stored to serve your ad.</li>
             </ul>
           </P>
@@ -35,8 +35,8 @@ export default function PrivacyPage() {
             and comply with law. We do not sell personal data.
           </P>
           <P title="5. Service providers">
-            We rely on Supabase (database/auth/storage), Upstash (rate limiting), Razorpay and
-            Stripe (payments), and OpenRouter (AI token redemption). They process data only to
+            We rely on Supabase (database/auth/storage), Upstash (rate limiting), Razorpay
+            (payments), and OpenRouter (AI token redemption). They process data only to
             provide their service.
           </P>
           <P title="6. Cookies">
