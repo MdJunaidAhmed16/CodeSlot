@@ -4,7 +4,7 @@
   "description": "Earn AI usage credits for a single, unobtrusive sponsored slot in your status bar. CodeSlot never reads your code.",
   "version": "0.1.0",
   "publisher": "junaidbuilds",
-  "license": "MIT",
+  "license": "SEE LICENSE IN LICENSE",
   "engines": {
     "vscode": "^1.85.0"
   },
@@ -23,14 +23,6 @@
     "color": "#0d1117",
     "theme": "dark"
   },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/MdJunaidAhmed16/CodeSlot.git"
-  },
-  "bugs": {
-    "url": "https://github.com/MdJunaidAhmed16/CodeSlot/issues"
-  },
-  "homepage": "https://github.com/MdJunaidAhmed16/CodeSlot#readme",
   "pricing": "Free",
   "qna": "marketplace",
   "activationEvents": [
@@ -122,8 +114,8 @@
     "check-types": "tsc --noEmit",
     "lint": "eslint src --ext ts",
     "test": "vscode-test",
-    "vsix": "vsce package",
-    "publish:marketplace": "vsce publish"
+    "vsix": "vsce package --allow-missing-repository",
+    "publish:marketplace": "vsce publish --allow-missing-repository"
   },
   "devDependencies": {
     "@types/node": "20.x",
