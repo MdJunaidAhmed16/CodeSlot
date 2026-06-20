@@ -8,7 +8,7 @@ import { AdFetcher } from "./adFetcher";
 import { ImpressionTracker } from "./impressionTracker";
 import { WalletPanel } from "./webview/walletPanel";
 import { RedeemPanel } from "./webview/redeemPanel";
-import { isEnabled } from "./config";
+import { isEnabled, MARKETING_URL } from "./config";
 import { isSafeHttpUrl } from "./util/validation";
 import { creditsToMoney, formatCredits } from "./economics";
 import { resolveMoney } from "./money";
@@ -36,8 +36,16 @@ export function activate(context: vscode.ExtensionContext): void {
   context.subscriptions.push(statusBar, fetcher, tracker, auth);
 
   fetcher.onAd((ad) => {
-    statusBar.setAd(ad);
     tracker.setAd(ad);
+    if (ad) {
+      statusBar.setAd(ad);
+    } else if (isEnabled() && auth.state.signedIn) {
+      // No paid campaign available — keep the slot filled (non-earning) rather
+      // than leaving an empty/$0 slot.
+      statusBar.showAdPlaceholder();
+    } else {
+      statusBar.setAd(null);
+    }
   });
 
   tracker.onCredit((newBalance) => {
@@ -194,6 +202,10 @@ function registerCommands(context: vscode.ExtensionContext, deps: Deps): void {
         ? "CodeSlot resumed — you're earning credits again."
         : "CodeSlot paused — ads hidden and credit accrual stopped."
     );
+  });
+
+  reg("codeslot.advertise", async () => {
+    await vscode.env.openExternal(vscode.Uri.parse(MARKETING_URL));
   });
 
   reg("codeslot.openCurrentAd", async () => {

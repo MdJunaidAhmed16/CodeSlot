@@ -12,6 +12,11 @@ import { isAcceptableBackendUrl } from "./util/validation";
 export const DEFAULT_API_BASE_URL =
   "https://codeslot-api.functions.supabase.co";
 
+/** Marketing site (the advertiser portal lives at /login). Used by the
+ *  "Advertise on CodeSlot" placeholder shown when no campaign is available.
+ *  Replace with the real deployed site URL before publishing. */
+export const MARKETING_URL = "https://codeslot.dev";
+
 /** Client-side polling / timing constants (docs/06-UNIT-ECONOMICS.md §1). */
 export const TIMING = {
   /** Continuous visible+focused dwell required to count one impression. */

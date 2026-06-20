@@ -46,6 +46,8 @@ export class StatusBarAd implements vscode.Disposable {
       this.adItem.hide();
       return;
     }
+    // Restore the click target (a placeholder may have repointed it).
+    this.adItem.command = "codeslot.openCurrentAd";
     const label = truncate(ad.text, 60);
     this.adItem.text = `$(megaphone) ${label}`;
 
@@ -97,6 +99,27 @@ export class StatusBarAd implements vscode.Disposable {
     this.balanceItem.text = `$(credit-card) ${creditsToMoney(balanceCredits, this.currency, this.rate)}`;
     this.balanceItem.tooltip = `You've earned ${formatCredits(balanceCredits)} · click to open your wallet`;
     this.balanceItem.show();
+  }
+
+  /**
+   * Fill the slot when no paid campaign is available, so it's never empty (and
+   * never an empty/$0 first impression). Non-earning: the impression tracker is
+   * cleared separately, so this placeholder accrues nothing. Clicking it opens
+   * the advertiser portal.
+   */
+  showAdPlaceholder(): void {
+    this.currentAd = null;
+    this.adItem.text = "$(megaphone) Advertise on CodeSlot";
+    this.adItem.color = undefined;
+    this.adItem.command = "codeslot.advertise";
+    const tip = new vscode.MarkdownString(undefined, true);
+    tip.isTrusted = false;
+    tip.supportHtml = false;
+    tip.appendMarkdown(
+      "No sponsor right now — your slot is open.\n\n$(link-external) Click to advertise on CodeSlot."
+    );
+    this.adItem.tooltip = tip;
+    this.adItem.show();
   }
 
   /** Show an immediate presence on activation, before any network call. */
