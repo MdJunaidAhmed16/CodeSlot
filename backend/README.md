@@ -75,7 +75,7 @@ psql "$SUPABASE_DB_URL" -f migrate.sql   # or paste migrate.sql in the SQL edito
 
 # 3. Deploy functions
 supabase functions deploy auth serve-ad track-event balance redeem-credits \
-  redeem-models delete-data fx-rate advertiser-account advertiser-campaigns \
+  redeem-models waitlist delete-data fx-rate advertiser-account advertiser-campaigns \
   advertiser-analytics payment-create payment-verify payment-webhook-stripe \
   payment-webhook-razorpay admin-metrics admin-ads admin-flags
 

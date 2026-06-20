@@ -119,7 +119,16 @@ as $$
   order by g.day;
 $$;
 
+-- ───────────── pre-launch developer waitlist ────────────────────
+create table if not exists waitlist (
+  id         bigint generated always as identity primary key,
+  email      text not null unique,
+  source     text,
+  created_at timestamptz not null default now()
+);
+
 -- ───────────── keep RLS locked down (idempotent) ────────────────
+alter table waitlist       enable row level security;
 alter table ads            enable row level security;
 alter table advertisers    enable row level security;
 alter table payments       enable row level security;

@@ -40,6 +40,8 @@ const byGithub = new Map();
 const advSessions = new Map();
 /** email -> advertiserId */
 const advByEmail = new Map();
+/** pre-launch developer waitlist emails */
+const waitlist = new Set();
 /** advertiserId -> wallet_usd */
 const advWallet = new Map();
 /** advertiserId -> [payment] */
@@ -213,6 +215,17 @@ const server = http.createServer(async (req, res) => {
     // GET /fx-rate (public)
     if (path === "fx-rate" && req.method === "GET") {
       return send(res, 200, { usd_inr: await getMockRate() });
+    }
+    // POST /waitlist (public) — pre-launch developer email capture.
+    if (path === "waitlist" && req.method === "POST") {
+      const b = await readBody(req);
+      const email = String(b.email || "").trim().toLowerCase();
+      if (!email || email.length > 254 || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+        return send(res, 400, { error: "a valid email is required" });
+      }
+      waitlist.add(email);
+      log(`waitlist + ${email} (${waitlist.size} total)`);
+      return send(res, 200, { success: true });
     }
     // GET /redeem-models (public) — static, price-aware catalog for local dev.
     if (path === "redeem-models" && req.method === "GET") {

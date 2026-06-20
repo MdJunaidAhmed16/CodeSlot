@@ -161,6 +161,16 @@ insert into feature_flags(key, value)
   values ('ad_serving_enabled', true)
   on conflict (key) do nothing;
 
+-- ───────────────── Pre-launch developer waitlist ────────────────
+-- Public-facing email capture (inserted via the service role in the waitlist
+-- function; RLS stays deny-all so the anon key can neither read nor write).
+create table if not exists waitlist (
+  id         bigint generated always as identity primary key,
+  email      text not null unique,
+  source     text,
+  created_at timestamptz not null default now()
+);
+
 -- ──────────────────── Helpers ───────────────────────────────────
 create or replace function current_balance(p_user uuid)
 returns numeric language sql stable as $$
@@ -432,6 +442,7 @@ alter table impressions    enable row level security;
 alter table credit_ledger  enable row level security;
 alter table redemptions    enable row level security;
 alter table feature_flags  enable row level security;
+alter table waitlist       enable row level security;
 -- No policies → anon/authenticated roles get zero rows. Service role bypasses.
 
 -- To grant yourself admin after first sign-in:

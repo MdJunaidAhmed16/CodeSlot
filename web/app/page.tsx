@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { MODEL_POINTS } from "@/lib/content";
 import { WhereAdShows } from "@/components/where-ad-shows";
 import { EarningsExplainer } from "@/components/earnings-explainer";
+import { WaitlistForm } from "@/components/waitlist-form";
 import { ArrowRight, Code2, ShieldCheck, Sparkles, Megaphone } from "lucide-react";
 
 export default function HomePage() {
@@ -75,6 +76,19 @@ export default function HomePage() {
 
         {/* What developers earn */}
         <EarningsExplainer />
+
+        {/* Developer waitlist */}
+        <section className="border-t bg-muted/30">
+          <div className="container flex flex-col items-center gap-5 py-20 text-center">
+            <Badge variant="secondary" className="gap-1.5"><Code2 className="h-3.5 w-3.5" /> For developers</Badge>
+            <h2 className="text-3xl font-bold">Earning opens soon — get in early</h2>
+            <p className="max-w-xl text-muted-foreground">
+              CodeSlot pays you AI credits for one tiny status‑bar slot while you code. Join the
+              waitlist and we&apos;ll email you the moment earning goes live.
+            </p>
+            <WaitlistForm source="home" />
+          </div>
+        </section>
 
         {/* Value props */}
         <section className="container py-24">
