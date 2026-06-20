@@ -15,8 +15,8 @@ export const PRICING: {
     name: "Status Bar",
     price: "$6",
     unit: "CPM",
-    blurb: "Your sponsored message in the VS Code status bar — seen while developers actively code.",
-    features: ["1,000 impressions", "~0.5–1% CTR", "Brand color + logo", "Self-serve, auto-approved"],
+    blurb: "Your sponsored message in the VS Code status bar - seen while developers actively code.",
+    features: ["1,000 impressions", "~0.5-1% CTR", "Brand color + logo", "Self-serve, auto-approved"],
     highlight: true,
     cta: { label: "Start a campaign", kind: "portal" },
   },
@@ -24,7 +24,7 @@ export const PRICING: {
     name: "Click (CPC)",
     price: "$0.30",
     unit: "per click",
-    blurb: "Pay only when an engaged developer clicks through — impressions are free.",
+    blurb: "Pay only when an engaged developer clicks through - impressions are free.",
     features: ["Pay per click (impressions free)", "Dev-audience traffic", "Real-time metrics", "Cancel anytime"],
     highlight: false,
     cta: { label: "Start a campaign", kind: "portal" },
@@ -47,7 +47,7 @@ export const HOW_IT_WORKS = [
   },
   {
     title: "You launch a campaign",
-    body: "Submit ad copy, a destination URL, brand color, logo, and a budget. Our backend auto-screens it for safety and brand-impersonation, then it goes live — no waiting on manual review.",
+    body: "Submit ad copy, a destination URL, brand color, logo, and a budget. Our backend auto-screens it for safety and brand-impersonation, then it goes live - no waiting on manual review.",
   },
   {
     title: "Developers earn, you reach them",
@@ -61,7 +61,7 @@ export const HOW_IT_WORKS = [
 
 export const MODEL_POINTS = [
   { stat: "1 credit = $0.001", label: "Transparent reward unit for developers" },
-  { stat: "$6 CPM", label: "Launch rate — well below dev-newsletter benchmarks" },
+  { stat: "$6 CPM", label: "Launch rate - well below dev-newsletter benchmarks" },
   { stat: "GitHub-verified", label: "Every earning account is a real developer" },
   { stat: "Privacy-first", label: "We never read code, files, or projects" },
 ];

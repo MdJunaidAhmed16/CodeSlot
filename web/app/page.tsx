@@ -27,7 +27,7 @@ export default function HomePage() {
             </h1>
             <p className="mt-6 max-w-2xl text-lg text-muted-foreground">
               One unobtrusive sponsored slot in the VS Code status bar. Developers earn
-              AI usage credits while they work; you reach an engaged technical audience —
+              AI usage credits while they work; you reach an engaged technical audience -
               with self-serve campaigns that auto-screen for safety.
             </p>
             <div className="mt-9 flex flex-col gap-3 sm:flex-row">
@@ -46,14 +46,14 @@ export default function HomePage() {
                   <span className="text-zinc-500">main ✓  TypeScript</span>
                   <span className="flex items-center gap-3">
                     <span className="flex items-center gap-1.5 text-primary">
-                      <Megaphone className="h-3.5 w-3.5" /> Vercel — Deploy in seconds →
+                      <Megaphone className="h-3.5 w-3.5" /> Vercel - Deploy in seconds →
                     </span>
                     <span className="text-emerald-400">$0.04 cr</span>
                   </span>
                 </div>
               </div>
               <p className="mt-3 text-xs text-muted-foreground">
-                A real sponsored slot — tinted with your brand color, one line, never blocking work.
+                A real sponsored slot - tinted with your brand color, one line, never blocking work.
               </p>
             </div>
           </div>
@@ -81,9 +81,9 @@ export default function HomePage() {
         <section className="border-t bg-muted/30">
           <div className="container flex flex-col items-center gap-5 py-20 text-center">
             <Badge variant="secondary" className="gap-1.5"><Code2 className="h-3.5 w-3.5" /> For developers</Badge>
-            <h2 className="text-3xl font-bold">Earning opens soon — get in early</h2>
+            <h2 className="text-3xl font-bold">Earning opens soon - get in early</h2>
             <p className="max-w-xl text-muted-foreground">
-              CodeSlot pays you AI credits for one tiny status‑bar slot while you code. Join the
+              CodeSlot pays you AI credits for one tiny status-bar slot while you code. Join the
               waitlist and we&apos;ll email you the moment earning goes live.
             </p>
             <WaitlistForm source="home" />
@@ -94,7 +94,7 @@ export default function HomePage() {
         <section className="container py-24">
           <div className="grid gap-6 md:grid-cols-3">
             <Feature icon={<Code2 className="h-6 w-6 text-primary" />} title="Engaged technical audience"
-              body="Developers spend 6–10 hours a day in their editor. CodeSlot reaches them in a high-attention, ad-free surface — without interrupting their flow." />
+              body="Developers spend 6-10 hours a day in their editor. CodeSlot reaches them in a high-attention, ad-free surface - without interrupting their flow." />
             <Feature icon={<ShieldCheck className="h-6 w-6 text-primary" />} title="Safe by default"
               body="Every campaign is auto-screened for adult, gambling, malware, phishing, and brand-impersonation content before it can ever serve." />
             <Feature icon={<Sparkles className="h-6 w-6 text-primary" />} title="Aligned incentives"

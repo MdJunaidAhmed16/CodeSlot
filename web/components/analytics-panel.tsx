@@ -59,11 +59,11 @@ export function AnalyticsPanel({ pref, rate }: { pref: Currency | null; rate: nu
       </CardHeader>
       <CardContent className="space-y-5">
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <Metric icon={<Eye className="h-4 w-4" />} label="Impressions" value={t ? t.impressions.toLocaleString() : "—"} />
-          <Metric icon={<MousePointerClick className="h-4 w-4" />} label="Clicks" value={t ? t.clicks.toLocaleString() : "—"} />
-          <Metric icon={<Percent className="h-4 w-4" />} label="CTR" value={t ? t.ctr.toFixed(2) + "%" : "—"} />
+          <Metric icon={<Eye className="h-4 w-4" />} label="Impressions" value={t ? t.impressions.toLocaleString() : "-"} />
+          <Metric icon={<MousePointerClick className="h-4 w-4" />} label="Clicks" value={t ? t.clicks.toLocaleString() : "-"} />
+          <Metric icon={<Percent className="h-4 w-4" />} label="CTR" value={t ? t.ctr.toFixed(2) + "%" : "-"} />
           <Metric icon={<DollarSign className="h-4 w-4" />} label="Spend"
-            value={t ? fmt(t.spend_usd, "usd", rate) : "—"}
+            value={t ? fmt(t.spend_usd, "usd", rate) : "-"}
             sub={t && pref === "inr" ? inrHint(t.spend_usd, rate) : undefined} />
         </div>
 

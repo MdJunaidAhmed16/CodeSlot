@@ -40,7 +40,7 @@ export function App() {
           await signOut();
           setStatus("out");
         } else {
-          // Network error — assume the stored session is fine, let Dashboard retry.
+          // Network error - assume the stored session is fine, let Dashboard retry.
           setStatus("in");
         }
       }

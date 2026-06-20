@@ -5,7 +5,7 @@ import type { Ad } from "./types";
 
 /**
  * Renders the single sponsored slot in the status bar plus a small balance
- * readout. Pure view layer — it holds no network logic and never touches the
+ * readout. Pure view layer - it holds no network logic and never touches the
  * workspace. Clicks are routed to a command, not handled inline.
  */
 export class StatusBarAd implements vscode.Disposable {
@@ -52,7 +52,7 @@ export class StatusBarAd implements vscode.Disposable {
     this.adItem.text = `$(megaphone) ${label}`;
 
     // Apply the advertiser's brand color to the slot text, but only if it's a
-    // valid hex string — never trust arbitrary content from the ad payload.
+    // valid hex string - never trust arbitrary content from the ad payload.
     this.adItem.color = isHexColor(ad.brand_color) ? ad.brand_color : undefined;
 
     const tip = new vscode.MarkdownString(undefined, true);
@@ -87,11 +87,11 @@ export class StatusBarAd implements vscode.Disposable {
     this.resetBalanceCommand();
     this.lastBalance = balanceCredits;
     if (balanceCredits === null) {
-      // Backend not reachable yet — stay visible so CodeSlot is always
+      // Backend not reachable yet - stay visible so CodeSlot is always
       // present and clickable (opening the wallet still works offline).
       this.balanceItem.text = "$(credit-card) CodeSlot";
       this.balanceItem.tooltip =
-        "CodeSlot — connecting to the backend… Click to open your wallet.";
+        "CodeSlot - connecting to the backend… Click to open your wallet.";
       this.balanceItem.show();
       return;
     }
@@ -116,7 +116,7 @@ export class StatusBarAd implements vscode.Disposable {
     tip.isTrusted = false;
     tip.supportHtml = false;
     tip.appendMarkdown(
-      "No sponsor right now — your slot is open.\n\n$(link-external) Click to advertise on CodeSlot."
+      "No sponsor right now - your slot is open.\n\n$(link-external) Click to advertise on CodeSlot."
     );
     this.adItem.tooltip = tip;
     this.adItem.show();
@@ -127,7 +127,7 @@ export class StatusBarAd implements vscode.Disposable {
     this.resetBalanceCommand();
     this.balanceItem.text = "$(credit-card) CodeSlot";
     this.balanceItem.tooltip =
-      "CodeSlot — starting up. Click to open your wallet.";
+      "CodeSlot - starting up. Click to open your wallet.";
     this.balanceItem.show();
   }
 
@@ -135,7 +135,7 @@ export class StatusBarAd implements vscode.Disposable {
   showSignIn(): void {
     this.currentAd = null;
     this.adItem.hide();
-    this.balanceItem.text = "$(sign-in) Sign in to earn — CodeSlot";
+    this.balanceItem.text = "$(sign-in) Sign in to earn - CodeSlot";
     this.balanceItem.tooltip =
       "CodeSlot requires a GitHub sign-in to earn credits (prevents abuse). Click to sign in.";
     this.balanceItem.command = "codeslot.signIn";
@@ -153,7 +153,7 @@ export class StatusBarAd implements vscode.Disposable {
     this.adItem.hide();
     this.balanceItem.text = "$(circle-slash) CodeSlot paused";
     this.balanceItem.tooltip =
-      "Ads paused — no credits are being earned. Click to manage.";
+      "Ads paused - no credits are being earned. Click to manage.";
     this.balanceItem.show();
   }
 

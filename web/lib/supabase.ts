@@ -12,7 +12,7 @@ let userClient: SupabaseClient | null = null;
 
 /**
  * Advertiser-portal Supabase client. The advertiser and the developer ("user")
- * portals keep SEPARATE auth sessions, each in its own storage key — otherwise
+ * portals keep SEPARATE auth sessions, each in its own storage key - otherwise
  * signing in (or out) on one portal would clobber the other when the same
  * person is both an advertiser and a developer in the same browser.
  */

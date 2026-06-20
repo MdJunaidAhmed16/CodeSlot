@@ -1,7 +1,7 @@
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 
-export const metadata = { title: "Refund & Cancellation Policy — CodeSlot" };
+export const metadata = { title: "Refund & Cancellation Policy - CodeSlot" };
 
 export default function RefundPage() {
   return (
@@ -24,7 +24,7 @@ export default function RefundPage() {
           <P title="3. Refunds of unused balance">
             Unused wallet balance (funds not yet delivered as impressions/clicks) may be refunded
             on request to the original payment method. Email us from the account&rsquo;s registered
-            address; eligible refunds are processed within 5–7 business days.
+            address; eligible refunds are processed within 5-7 business days.
           </P>
           <P title="4. Non-refundable">
             Spend on impressions and clicks already delivered is non-refundable. Spend on campaigns
@@ -32,7 +32,7 @@ export default function RefundPage() {
           </P>
           <P title="5. Failed or duplicate payments">
             If a payment is debited but your wallet is not credited, or you are charged twice,
-            contact us with the transaction reference — we will verify and refund any duplicate or
+            contact us with the transaction reference - we will verify and refund any duplicate or
             failed charge in full.
           </P>
           <P title="6. Currency">

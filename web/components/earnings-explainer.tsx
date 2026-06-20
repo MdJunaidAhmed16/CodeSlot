@@ -76,7 +76,7 @@ export function EarningsExplainer() {
           <Coins className="mr-1 inline h-4 w-4 text-primary" />
           Reach your first redemption with about <b className="text-foreground">{Math.ceil(MIN_REDEEM / REWARD_IMPRESSION).toLocaleString()} impressions</b> or{" "}
           <b className="text-foreground">{Math.ceil(MIN_REDEEM / REWARD_CLICK)} clicks</b>. We support two
-          campaign types — <b className="text-foreground">CPM</b> (you earn per impression) and{" "}
+          campaign types - <b className="text-foreground">CPM</b> (you earn per impression) and{" "}
           <b className="text-foreground">CPC</b> (you earn per click). Estimates only; actual earnings depend on the ads shown.
         </div>
       </div>

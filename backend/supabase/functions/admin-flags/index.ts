@@ -1,5 +1,5 @@
 // POST /admin-flags  (admin-gated)  Body: { key, value }
-// Toggles a feature flag — primarily the `ad_serving_enabled` kill switch.
+// Toggles a feature flag - primarily the `ad_serving_enabled` kill switch.
 import { error, handleOptions, json, readJson } from "../_shared/http.ts";
 import { requireOwner } from "../_shared/admin.ts";
 

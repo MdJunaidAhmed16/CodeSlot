@@ -11,12 +11,12 @@ export function creditsToUsd(credits: number): number {
 }
 
 // Launch rate card. A campaign is billed EITHER by impressions (CPM) OR by
-// clicks (CPC) — never both. The developer is rewarded only on the billed
+// clicks (CPC) - never both. The developer is rewarded only on the billed
 // event (so credits are always backed by advertiser revenue).
 export type BillingModel = "cpm" | "cpc";
 
 export const RATE_CARD = {
-  // $6 CPM ($0.006/impression) — launch rate, kept low to attract early
+  // $6 CPM ($0.006/impression) - launch rate, kept low to attract early
   // advertisers. Developer reward is held at 4 credits ($0.004 = ~67%); the
   // platform keeps ~$0.002 (~33%). Raise the cost later as reach grows.
   cpm: { cost_per_impression: 0.006, reward_per_impression: 4 },

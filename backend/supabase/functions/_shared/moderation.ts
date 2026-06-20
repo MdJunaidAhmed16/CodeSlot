@@ -1,4 +1,4 @@
-// Ad moderation engine — the "strong backend verification" that lets campaigns
+// Ad moderation engine - the "strong backend verification" that lets campaigns
 // auto-approve safely (no manual review). It runs several independent screens;
 // ANY hard failure rejects the ad. Layers:
 //   1. Banned-category keyword screen (adult, gambling, drugs, weapons, hate,
@@ -7,7 +7,7 @@
 //      no URL shorteners, no high-risk free TLDs, sane length/subdomains).
 //   3. Brand-impersonation / phishing heuristic (famous brand token in a
 //      non-official domain).
-//   4. Google Safe Browsing lookup (if SAFE_BROWSING_API_KEY is set) — the
+//   4. Google Safe Browsing lookup (if SAFE_BROWSING_API_KEY is set) - the
 //      authoritative malware/social-engineering signal.
 
 export interface AdInput {
@@ -292,7 +292,7 @@ function registrableDomain(host: string): string {
 async function safeBrowsingCheck(url: string): Promise<string | null> {
   const key = Deno.env.get("SAFE_BROWSING_API_KEY");
   if (!key) {
-    return null; // not configured — skip (recommended to set in production)
+    return null; // not configured - skip (recommended to set in production)
   }
   try {
     const res = await fetch(

@@ -221,7 +221,7 @@ const REDEEM_BODY = `
   <header class="modal-head">
     <div>
       <h1>Redeem Credits <span class="arrow">→</span> AI Tokens</h1>
-      <p id="subtitle" class="subtitle">Your balance: <b id="bal">—</b> · Select where to spend it (min 5,000 cr ≈ $5)</p>
+      <p id="subtitle" class="subtitle">Your balance: <b id="bal">-</b> · Select where to spend it (min 5,000 cr ≈ $5)</p>
     </div>
   </header>
 
@@ -253,11 +253,11 @@ const REDEEM_BODY = `
     <div class="confirm">
       <div class="confirm-icon">✓</div>
       <table class="breakdown">
-        <tr><td>Target model</td><td id="cfModel">—</td></tr>
+        <tr><td>Target model</td><td id="cfModel">-</td></tr>
         <tr class="strong"><td>Redemption value</td><td id="cfValue">$0.00</td></tr>
       </table>
       <p class="warn">Credits are non-refundable once redeemed. We'll create a
-        new OpenRouter API key loaded with this amount and show it once — copy
+        new OpenRouter API key loaded with this amount and show it once - copy
         and store it somewhere safe.</p>
     </div>
   </section>
@@ -278,6 +278,6 @@ const REDEEM_BODY = `
     <button id="next" class="btn btn-primary" disabled>Next →</button>
   </footer>
   <p id="status" class="status" hidden></p>
-  <p class="secure">🔒 Secure transaction — the key is minted server-side and shown only to you.</p>
+  <p class="secure">🔒 Secure transaction - the key is minted server-side and shown only to you.</p>
 </div>
 `;

@@ -1,4 +1,4 @@
-// POST /payment-webhook-stripe — Stripe webhook (no auth; signature-verified).
+// POST /payment-webhook-stripe - Stripe webhook (no auth; signature-verified).
 // On `checkout.session.completed`, idempotently credits the advertiser wallet.
 import { serviceClient } from "../_shared/supabase.ts";
 import { verifyStripe } from "../_shared/payments.ts";
@@ -29,7 +29,7 @@ Deno.serve(async (req) => {
         p_ref: sessionId,
       });
       if (error) {
-        // Unknown session — ack anyway so Stripe doesn't hammer us.
+        // Unknown session - ack anyway so Stripe doesn't hammer us.
         return new Response("ok", { status: 200 });
       }
     }

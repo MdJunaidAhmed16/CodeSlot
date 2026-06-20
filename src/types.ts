@@ -72,7 +72,7 @@ export interface RedeemResponse {
   new_balance: number;
   openrouter_credit_applied: number;
   /** Freshly minted OpenRouter API key, loaded with the redeemed amount.
-   *  Returned exactly once — the backend cannot retrieve it again. */
+   *  Returned exactly once - the backend cannot retrieve it again. */
   openrouter_key?: string;
   /** Human-readable name given to the provisioned key (model + date). */
   openrouter_key_name?: string;

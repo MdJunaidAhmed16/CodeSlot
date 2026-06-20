@@ -1,4 +1,4 @@
-// POST /waitlist — public. Captures a developer email for the pre-launch
+// POST /waitlist - public. Captures a developer email for the pre-launch
 // waitlist. Inserted via the service role (RLS stays deny-all); idempotent on
 // email so re-submitting is a no-op success.
 import { error, handleOptions, json, readJson } from "../_shared/http.ts";

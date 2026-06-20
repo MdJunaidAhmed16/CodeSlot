@@ -1,5 +1,5 @@
 // @ts-check
-/* CodeSlot Redeem webview — 3-step flow. No network access (CSP). The API key
+/* CodeSlot Redeem webview - 3-step flow. No network access (CSP). The API key
    is requested natively by the extension host, never typed into this window. */
 (function () {
   const vscode = acquireVsCodeApi();
@@ -26,7 +26,7 @@
     return money(Number(credits) * state.creditUsd);
   }
   // The developer's balance in their display currency (₹ uses the live rate).
-  // The redemption breakdown itself stays in USD — the OpenRouter key is USD.
+  // The redemption breakdown itself stays in USD - the OpenRouter key is USD.
   // Adaptive precision so small balances don't render as ₹0 / $0.00.
   function bal(credits) {
     const inUsd = Number(credits) * state.creditUsd;
@@ -79,7 +79,7 @@
     } else {
       next.textContent = "🔒 Redeem Now";
       next.disabled = false;
-      $("cfModel").textContent = state.model ? state.model.name : "—";
+      $("cfModel").textContent = state.model ? state.model.name : "-";
       $("cfValue").textContent = usd(state.amountCredits) + " · " + cr(state.amountCredits);
     }
   }

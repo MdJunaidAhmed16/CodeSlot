@@ -1,7 +1,7 @@
 // POST /track-event   (requires Authorization: Bearer <session token>)
 // Body: { ad_id, event_type, idempotency_key, client_ts }
 //
-// The user is derived from the verified session token — NOT from the body — so
+// The user is derived from the verified session token - NOT from the body - so
 // events can only ever be attributed to the authenticated GitHub-backed user.
 import { error, handleOptions, isUuid, json, readJson } from "../_shared/http.ts";
 import { serviceClient } from "../_shared/supabase.ts";

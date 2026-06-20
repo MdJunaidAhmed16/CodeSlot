@@ -70,7 +70,7 @@ Deno.serve(async (req) => {
   const openrouterSpent = sumUsd(orRows, "openrouter_amount");
 
   // Money still owed to advertisers: unspent wallet + undelivered campaign
-  // budget — but ONLY for advertiser-funded campaigns (house/owner ads with
+  // budget - but ONLY for advertiser-funded campaigns (house/owner ads with
   // advertiser_id = null carry no real liability).
   const { data: walletRows } = await db.from("advertisers").select("wallet_usd");
   const { data: budgetRows } = await db
@@ -107,7 +107,7 @@ Deno.serve(async (req) => {
       credits_redeemed: creditsRedeemed,
       earned_usd: round2(creditsToUsd(creditsEarned)),
       redeemed_usd: round2(creditsToUsd(creditsRedeemed)),
-      // Credits accrued but not yet redeemed — a liability on the books.
+      // Credits accrued but not yet redeemed - a liability on the books.
       outstanding_usd: round2(creditsToUsd(creditsEarned - creditsRedeemed)),
       redemptions: redemptionCount ?? 0,
       total_campaigns: totalCampaigns,
@@ -116,7 +116,7 @@ Deno.serve(async (req) => {
     treasury: {
       collected_usd: round2(collected),          // cash in (Stripe/Razorpay balance)
       openrouter_spent_usd: round2(openrouterSpent), // cash out (OpenRouter)
-      net_cash_usd: netCash,                       // in − out
+      net_cash_usd: netCash,                       // in - out
       advertiser_float_usd: round2(advertiserFloat), // owed to advertisers (unspent)
       dev_liability_usd: round2(devLiability),     // future OpenRouter cost (unredeemed credits)
       distributable_usd: distributable,            // safe-to-withdraw profit

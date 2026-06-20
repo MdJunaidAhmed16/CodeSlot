@@ -8,7 +8,7 @@ export function WhereAdShows() {
         <div className="mx-auto mb-12 max-w-2xl text-center">
           <h2 className="text-3xl font-bold tracking-tight">Exactly where your ad appears</h2>
           <p className="mt-3 text-muted-foreground">
-            One line, bottom-right of the editor&apos;s status bar — the same strip that shows
+            One line, bottom-right of the editor&apos;s status bar - the same strip that shows
             the branch and language. It never covers code or interrupts work.
           </p>
         </div>
@@ -20,7 +20,7 @@ export function WhereAdShows() {
             <span className="h-3 w-3 rounded-full bg-[#ff5f57]" />
             <span className="h-3 w-3 rounded-full bg-[#febc2e]" />
             <span className="h-3 w-3 rounded-full bg-[#28c840]" />
-            <span className="ml-3 text-xs text-zinc-400">extension.ts — my-project</span>
+            <span className="ml-3 text-xs text-zinc-400">extension.ts - my-project</span>
           </div>
 
           <div className="flex">
@@ -48,14 +48,14 @@ export function activate(ctx: vscode.ExtensionContext) {
             </div>
           </div>
 
-          {/* Status bar — the ad slot */}
+          {/* Status bar - the ad slot */}
           <div className="flex items-center justify-between bg-[#007acc] px-3 py-1 font-mono text-[11px] text-white">
             <span className="flex items-center gap-3">
               <span>⎇ main</span><span>✓ 0 ⚠ 0</span>
             </span>
             <span className="flex items-center gap-3">
               <span className="flex items-center gap-1 rounded bg-black/15 px-1.5 py-0.5">
-                <Megaphone className="h-3 w-3" /> Vercel — Deploy in seconds →
+                <Megaphone className="h-3 w-3" /> Vercel - Deploy in seconds →
               </span>
               <span className="text-emerald-200">$0.04 cr</span>
               <span>TypeScript</span>
@@ -67,7 +67,7 @@ export function activate(ctx: vscode.ExtensionContext) {
         <div className="mx-auto mt-6 grid max-w-4xl gap-6 md:grid-cols-2">
           <div className="rounded-xl border bg-card p-5">
             <div className="mb-3 flex items-center gap-2 text-sm font-medium">
-              <MousePointer2 className="h-4 w-4 text-primary" /> On hover — your brand + logo
+              <MousePointer2 className="h-4 w-4 text-primary" /> On hover - your brand + logo
             </div>
             <div className="rounded-lg border bg-[#252526] p-3 text-zinc-200 shadow-inner">
               <div className="flex items-center gap-2">

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { HOW_IT_WORKS } from "@/lib/content";
 
-export const metadata = { title: "How it works — CodeSlot" };
+export const metadata = { title: "How it works - CodeSlot" };
 
 export default function HowItWorksPage() {
   return (
@@ -16,7 +16,7 @@ export default function HowItWorksPage() {
           <div className="mx-auto max-w-2xl text-center">
             <h1 className="text-4xl font-extrabold tracking-tight md:text-5xl">How CodeSlot works</h1>
             <p className="mt-4 text-muted-foreground">
-              A two-sided model that aligns advertisers and developers — built privacy-first
+              A two-sided model that aligns advertisers and developers - built privacy-first
               and safe by default.
             </p>
           </div>

@@ -31,7 +31,7 @@ Deno.serve(async (req) => {
     return json({ ad: null, next_in_seconds: NEXT_IN_SEC });
   }
 
-  // Ad serving is anonymous — no user row is created here. Earning credits
+  // Ad serving is anonymous - no user row is created here. Earning credits
   // requires authentication via /track-event. `device_id` is used only for the
   // per-device display frequency cap above.
 

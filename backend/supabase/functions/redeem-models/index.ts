@@ -1,4 +1,4 @@
-// GET /redeem-models — public. Returns a curated, price-aware list of OpenRouter
+// GET /redeem-models - public. Returns a curated, price-aware list of OpenRouter
 // models for the redeem picker, fetched live from OpenRouter's public catalog
 // and cached in memory. Falls back to the last good cache on transient errors;
 // the client keeps its own static list as a final fallback.

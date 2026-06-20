@@ -122,7 +122,7 @@ export function Dashboard({
               onClick={() => void toggleServing(!metrics.ad_serving_enabled)}
             >
               <Power className="h-4 w-4" />
-              {metrics.ad_serving_enabled ? "Ad serving ON" : "OFF — kill switch"}
+              {metrics.ad_serving_enabled ? "Ad serving ON" : "OFF - kill switch"}
             </Button>
             {!isOwner && (
               <Button size="sm" onClick={() => setShowNew(true)}>
@@ -141,7 +141,7 @@ export function Dashboard({
               <Stat label="Credits earned" value={t.credits_earned.toLocaleString()} sub={money(t.earned_usd) + " value"} />
               <Stat label="Credits redeemed" value={t.credits_redeemed.toLocaleString()} sub={`${money(t.redeemed_usd)} · ${t.redemptions} redemptions`} />
               <Stat label="Outstanding liability" value={money(t.outstanding_usd)} sub="earned, not yet redeemed" />
-              <Stat label="Platform margin" value={money(t.margin_usd)} sub="revenue − payout" accent />
+              <Stat label="Platform margin" value={money(t.margin_usd)} sub="revenue - payout" accent />
             </div>
             <Panel title="Economics" onRefresh={() => void load()}>
               <table className="w-full text-sm">
@@ -188,7 +188,7 @@ export function Dashboard({
               </thead>
               <tbody>
                 {metrics.campaigns.map((c) => {
-                  const ctr = c.impressions ? ((c.clicks / c.impressions) * 100).toFixed(1) + "%" : "—";
+                  const ctr = c.impressions ? ((c.clicks / c.impressions) * 100).toFixed(1) + "%" : "-";
                   return (
                     <tr key={c.id} className="border-b last:border-0">
                       <td className="py-3 font-semibold">{c.advertiser_name}</td>
@@ -257,14 +257,14 @@ function TreasuryPanel({ tr, onRefresh }: { tr: Treasury; onRefresh: () => void 
         <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
           <TStat icon={<ArrowDownToLine className="h-4 w-4 text-emerald-500" />} label="Collected" value={money(tr.collected_usd)} sub="in Stripe / Razorpay" />
           <TStat icon={<ArrowUpFromLine className="h-4 w-4 text-amber-500" />} label="OpenRouter spent" value={money(tr.openrouter_spent_usd)} sub="cost of redemptions" />
-          <TStat icon={<Banknote className="h-4 w-4 text-foreground" />} label="Net cash" value={money(tr.net_cash_usd)} sub="collected − spent" />
+          <TStat icon={<Banknote className="h-4 w-4 text-foreground" />} label="Net cash" value={money(tr.net_cash_usd)} sub="collected - spent" />
         </div>
         <table className="w-full text-sm">
           <tbody>
             <Row k="Cash collected (advertiser payments)" v={money(tr.collected_usd)} />
-            <Row k="Spent on OpenRouter (redemptions)" v={"−" + money(tr.openrouter_spent_usd)} />
-            <Row k="Owed to advertisers (unspent wallet + budgets)" v={"−" + money(tr.advertiser_float_usd)} />
-            <Row k="Developer credit liability (future OpenRouter cost)" v={"−" + money(tr.dev_liability_usd)} />
+            <Row k="Spent on OpenRouter (redemptions)" v={"-" + money(tr.openrouter_spent_usd)} />
+            <Row k="Owed to advertisers (unspent wallet + budgets)" v={"-" + money(tr.advertiser_float_usd)} />
+            <Row k="Developer credit liability (future OpenRouter cost)" v={"-" + money(tr.dev_liability_usd)} />
             <Row k="Distributable profit" v={money(tr.distributable_usd)} strong />
           </tbody>
         </table>
@@ -273,7 +273,7 @@ function TreasuryPanel({ tr, onRefresh }: { tr: Treasury; onRefresh: () => void 
           The collected cash sits in your <b>Stripe</b> (USD) and <b>Razorpay</b> (INR) balances.
           Add your bank account once in each provider&apos;s dashboard; they pay out automatically on a
           schedule (or trigger a manual payout). Keep at least the <b>owed-to-advertisers</b> and
-          <b> developer-liability</b> amounts in reserve — the <b>distributable profit</b> above is what&apos;s
+          <b> developer-liability</b> amounts in reserve - the <b>distributable profit</b> above is what&apos;s
           safe to take out. Top up your OpenRouter balance to cover redemptions.
         </div>
       </CardContent>

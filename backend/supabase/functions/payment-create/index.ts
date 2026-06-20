@@ -1,8 +1,8 @@
 // POST /payment-create  (advertiser-gated)
 // Body: { amount, currency?, country? }
-//   amount   — major units (e.g. 10 for $10, 800 for ₹800)
-//   currency — 'usd' | 'inr' (optional; defaults from `country` geo)
-//   country  — 2-letter code (forwarded by the web app from edge geo)
+//   amount   - major units (e.g. 10 for $10, 800 for ₹800)
+//   currency - 'usd' | 'inr' (optional; defaults from `country` geo)
+//   country  - 2-letter code (forwarded by the web app from edge geo)
 //
 // Creates a Stripe Checkout Session (USD) or a Razorpay Order (INR) and records
 // a 'created' payment row. The wallet is credited later, only by the verified
@@ -42,7 +42,7 @@ Deno.serve(async (req) => {
 
   // Honor the advertiser's locked billing currency (the payment RAIL). The
   // currency is locked for 30 days (see advertiser-account); the first top-up
-  // sets it. The FX rate is ALWAYS live — conversion happens at the real-money
+  // sets it. The FX rate is ALWAYS live - conversion happens at the real-money
   // moment, so the credited USD matches the rupees actually received and the
   // platform carries no FX risk.
   const { data: adv } = await db
@@ -72,7 +72,7 @@ Deno.serve(async (req) => {
   if (amountUsd > MAX_USD) return error("amount too large", 400);
 
   // Route to a processor. USD prefers Stripe, but falls back to Razorpay
-  // (International Payments) when Stripe isn't configured — e.g. Indian
+  // (International Payments) when Stripe isn't configured - e.g. Indian
   // accounts where Stripe is invite-only. INR always uses Razorpay.
   const stripeAvailable = Boolean(Deno.env.get("STRIPE_SECRET_KEY"));
   const provider =
@@ -105,12 +105,12 @@ Deno.serve(async (req) => {
       return json({ provider: "stripe", checkout_url: session.url, amount_usd: amountUsd });
     }
 
-    // Razorpay — handles INR, and USD/foreign cards when International
+    // Razorpay - handles INR, and USD/foreign cards when International
     // Payments is enabled on the account.
     const keyId = Deno.env.get("RAZORPAY_KEY_ID");
     const keySecret = Deno.env.get("RAZORPAY_KEY_SECRET");
     if (!keyId || !keySecret) {
-      // Diagnostic (names/lengths only — never logs the secret values).
+      // Diagnostic (names/lengths only - never logs the secret values).
       console.error("payment-create 503: razorpay keys not visible", {
         has_RAZORPAY_KEY_ID: Boolean(keyId),
         has_RAZORPAY_KEY_SECRET: Boolean(keySecret),

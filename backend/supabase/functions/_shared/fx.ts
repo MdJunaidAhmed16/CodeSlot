@@ -25,7 +25,7 @@ export async function getUsdInrRate(): Promise<number> {
       }
     }
   } catch {
-    /* network/parse failure — fall through to last-known / fallback */
+    /* network/parse failure - fall through to last-known / fallback */
   }
   return cached?.rate ?? fallback;
 }

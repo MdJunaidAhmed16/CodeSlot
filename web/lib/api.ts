@@ -41,7 +41,7 @@ export interface SubmitInput {
   budget_remaining?: number;
 }
 
-// Launch rate card (display only — the backend is authoritative).
+// Launch rate card (display only - the backend is authoritative).
 export const RATES = {
   cpm: { label: "CPM", price: "$6", per: "per 1,000 impressions", costPerImpression: 0.006 },
   cpc: { label: "CPC", price: "$0.30", per: "per click", costPerClick: 0.3 },
@@ -82,7 +82,7 @@ async function call<T>(path: string, init: RequestInit = {}): Promise<T> {
   return (await res.json()) as T;
 }
 
-/** Local/dev sign-in (mock backend) — exchanges an email for a session token. */
+/** Local/dev sign-in (mock backend) - exchanges an email for a session token. */
 export async function devSignIn(email: string): Promise<void> {
   const res = await fetch(`${API_BASE}/advertiser-auth`, {
     method: "POST",

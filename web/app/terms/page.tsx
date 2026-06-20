@@ -3,7 +3,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { Card, CardContent } from "@/components/ui/card";
 import { Check, X } from "lucide-react";
 
-export const metadata = { title: "Terms & Acceptable Use — CodeSlot" };
+export const metadata = { title: "Terms & Acceptable Use - CodeSlot" };
 
 const ALLOWED = [
   "Developer tools, IDEs, libraries, and frameworks",
@@ -79,7 +79,7 @@ export default function TermsPage() {
               deceptive URLs (IP-literal hosts, punycode look-alikes, URL shorteners, high-risk
               TLDs), brand impersonation, and known malware/phishing via Google Safe Browsing.
               Campaigns that fail are rejected automatically with a reason. We may additionally
-              suspend any account, remove any campaign, and withhold spend for violations — at any
+              suspend any account, remove any campaign, and withhold spend for violations - at any
               time and without notice.
             </Section>
             <Section title="2. Destination URLs">
@@ -94,7 +94,7 @@ export default function TermsPage() {
             </Section>
             <Section title="4. Privacy">
               CodeSlot never collects developers&apos; code, files, or project data. Advertisers receive
-              only aggregate impression/click metrics — never personal data about individual developers.
+              only aggregate impression/click metrics - never personal data about individual developers.
             </Section>
             <Section title="5. Billing & refunds">
               You pay only for budget-backed impressions and clicks actually served. Unused budget is

@@ -1,7 +1,7 @@
 // Admin ad management (admin-gated).
 //   GET   /admin-ads           → list ads with metrics
 //   POST  /admin-ads           → create an ad
-//   PATCH /admin-ads           → update an ad (by id) — incl. toggle active, top-up budget
+//   PATCH /admin-ads           → update an ad (by id) - incl. toggle active, top-up budget
 import { error, handleOptions, isSafeHttpUrl, json, readJson } from "../_shared/http.ts";
 import { requireAdmin } from "../_shared/admin.ts";
 

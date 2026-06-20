@@ -118,7 +118,7 @@ export class ApiClient {
         ad_id: adId,
         event_type: eventType,
         idempotency_key: idempotencyKey,
-        // Client clock only — server timestamps authoritatively.
+        // Client clock only - server timestamps authoritatively.
         client_ts: Date.now(),
       },
     });
@@ -131,7 +131,7 @@ export class ApiClient {
     });
   }
 
-  /** Public live USD→INR rate (no auth) — used to show earnings in ₹. */
+  /** Public live USD→INR rate (no auth) - used to show earnings in ₹. */
   fxRate(): Promise<{ usd_inr: number }> {
     return this.request<{ usd_inr: number }>("fx-rate", { method: "GET" });
   }

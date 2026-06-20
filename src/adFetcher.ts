@@ -10,7 +10,7 @@ type AdListener = (ad: Ad | null) => void;
  * Polls /serve-ad on a timer, validates the payload, and notifies listeners.
  *
  * Resilience: any network/parse error is swallowed (logged to the output
- * channel) and the last good ad is kept — the UI must never break because the
+ * channel) and the last good ad is kept - the UI must never break because the
  * backend is down (ROADMAP Phase 2 exit criteria).
  */
 export class AdFetcher implements vscode.Disposable {

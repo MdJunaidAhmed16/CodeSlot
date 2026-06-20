@@ -108,10 +108,10 @@ export function ProfileMenu({ email, rate, pref, canChange, lockedUntil, onSetCu
           <div className="my-1 grid grid-cols-2 gap-2 px-2">
             <Stat
               label="Wallet"
-              value={account ? fmt(account.wallet_usd, "usd", rate) : "—"}
+              value={account ? fmt(account.wallet_usd, "usd", rate) : "-"}
               sub={account && rail === "inr" ? inrHint(account.wallet_usd, rate) : undefined}
             />
-            <Stat label="Campaigns" value={account ? String(account.campaigns) : "—"} />
+            <Stat label="Campaigns" value={account ? String(account.campaigns) : "-"} />
           </div>
 
           <div className="my-1 border-t" />

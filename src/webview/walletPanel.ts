@@ -162,7 +162,7 @@ const WALLET_BODY = `
   <div class="hero-row">
     <div>
       <div class="hero-label">CODESLOT WALLET</div>
-      <div id="balance" class="hero-balance">—</div>
+      <div id="balance" class="hero-balance">-</div>
       <div id="tokens" class="hero-sub">credits</div>
     </div>
     <div class="hero-bolt">⚡</div>

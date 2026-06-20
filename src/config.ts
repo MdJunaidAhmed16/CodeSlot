@@ -5,7 +5,7 @@ import { isAcceptableBackendUrl } from "./util/validation";
  * Central configuration. The backend base URL is hardcoded by default so that
  * a compromised setting cannot silently redirect traffic to a malicious host
  * (see docs/03-SECURITY.md §3). A user MAY override it via settings, but only
- * with an https URL — this is gated for self-hosting/testing.
+ * with an https URL - this is gated for self-hosting/testing.
  */
 
 /** Default, hardcoded backend. Replace with the real deployment URL. */
@@ -21,7 +21,7 @@ export const MARKETING_URL = "https://codeslot.dev";
 export const TIMING = {
   /** Continuous visible+focused dwell required to count one impression. */
   impressionDwellMs: 5_000,
-  /** Ad rotation interval (3–5 min); also gated by server `next_in_seconds`. */
+  /** Ad rotation interval (3-5 min); also gated by server `next_in_seconds`. */
   defaultAdRefreshMs: 4 * 60_000,
   /** Minimum spacing the client enforces between impression reports per ad. */
   clientFreqCapMs: 4 * 60_000,

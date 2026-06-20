@@ -18,7 +18,7 @@ import { resolveMoney } from "./money";
  *
  * Wiring: identity/auth → api client → ad fetcher + impression tracker → status
  * bar. Earning requires a GitHub sign-in (anti-fraud). No workspace, document,
- * or filesystem API is touched anywhere here — the core privacy guarantee.
+ * or filesystem API is touched anywhere here - the core privacy guarantee.
  */
 export function activate(context: vscode.ExtensionContext): void {
   const log = vscode.window.createOutputChannel("CodeSlot", { log: true });
@@ -40,7 +40,7 @@ export function activate(context: vscode.ExtensionContext): void {
     if (ad) {
       statusBar.setAd(ad);
     } else if (isEnabled() && auth.state.signedIn) {
-      // No paid campaign available — keep the slot filled (non-earning) rather
+      // No paid campaign available - keep the slot filled (non-earning) rather
       // than leaving an empty/$0 slot.
       statusBar.showAdPlaceholder();
     } else {
@@ -188,7 +188,7 @@ function registerCommands(context: vscode.ExtensionContext, deps: Deps): void {
       );
     } catch (err) {
       void vscode.window.showErrorMessage(
-        `CodeSlot: could not fetch balance — ${describe(err)}`
+        `CodeSlot: could not fetch balance - ${describe(err)}`
       );
     }
   });
@@ -199,8 +199,8 @@ function registerCommands(context: vscode.ExtensionContext, deps: Deps): void {
     await cfg.update("enabled", next, vscode.ConfigurationTarget.Global);
     void vscode.window.showInformationMessage(
       next
-        ? "CodeSlot resumed — you're earning credits again."
-        : "CodeSlot paused — ads hidden and credit accrual stopped."
+        ? "CodeSlot resumed - you're earning credits again."
+        : "CodeSlot paused - ads hidden and credit accrual stopped."
     );
   });
 

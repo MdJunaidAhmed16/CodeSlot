@@ -46,7 +46,7 @@ export function Login({ onSignedIn, notice }: { onSignedIn: () => void; notice?:
           ) : (
             <div className="space-y-3">
               <p className="rounded-md bg-muted p-3 text-xs text-muted-foreground">
-                Local/dev mode — Supabase Auth not configured. Paste a GitHub token or just
+                Local/dev mode - Supabase Auth not configured. Paste a GitHub token or just
                 continue to sign in against the mock backend.
               </p>
               <Input

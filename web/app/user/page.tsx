@@ -77,7 +77,7 @@ export default function UserDashboard() {
               <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
                 <Wallet className="h-4 w-4" /> Balance
               </div>
-              <div className="mt-1 text-4xl font-extrabold">{bal ? usd(bal.balance) : "—"}</div>
+              <div className="mt-1 text-4xl font-extrabold">{bal ? usd(bal.balance) : "-"}</div>
               <div className="text-sm text-muted-foreground">{bal ? fmtCr(bal.balance) : ""}</div>
             </div>
             <Button size="lg" disabled={!bal || bal.balance < MIN_REDEEM_CREDITS} onClick={() => setRedeeming(true)}>
@@ -108,7 +108,7 @@ export default function UserDashboard() {
                 ))}
               </ul>
             ) : (
-              <p className="text-sm text-muted-foreground">Nothing yet — keep coding with the extension installed.</p>
+              <p className="text-sm text-muted-foreground">Nothing yet - keep coding with the extension installed.</p>
             )}
           </CardContent>
         </Card>
@@ -215,7 +215,7 @@ function RedeemDialog({ balance, onDone, setBusy }: { balance: number; busy: boo
               ) : (
                 <p className="text-sm">{result.message}</p>
               )}
-              <p className="text-xs text-amber-500">⚠️ Copy it now — it can't be retrieved again. Use base URL https://openrouter.ai/api/v1.</p>
+              <p className="text-xs text-amber-500">⚠️ Copy it now - it can't be retrieved again. Use base URL https://openrouter.ai/api/v1.</p>
               <div className="flex justify-end"><Button onClick={close}>Done</Button></div>
             </div>
           )}

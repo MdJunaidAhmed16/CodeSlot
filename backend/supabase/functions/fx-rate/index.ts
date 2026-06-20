@@ -1,4 +1,4 @@
-// GET /fx-rate — public. Returns today's USD→INR rate (cached) so the portal
+// GET /fx-rate - public. Returns today's USD→INR rate (cached) so the portal
 // shows and converts amounts at the same rate the backend charges at.
 import { error, handleOptions, json } from "../_shared/http.ts";
 import { getUsdInrRate } from "../_shared/fx.ts";

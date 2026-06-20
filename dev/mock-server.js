@@ -1,4 +1,4 @@
-// CodeSlot local mock backend — zero dependencies (Node http module).
+// CodeSlot local mock backend - zero dependencies (Node http module).
 //
 // Mirrors the real API shape so you can exercise the extension AND the admin
 // dashboard without deploying Supabase. Identity is GitHub-based: /auth takes a
@@ -23,9 +23,9 @@ const DEV_OWNER = process.env.MOCK_OWNER !== "false";
 
 // ── In-memory state ───────────────────────────────────────────────
 const ADS = [
-  { ad_id: randomUUID(), advertiser_name: "Vercel", text: "Vercel — Deploy in seconds →", url: "https://vercel.com", description: "Ship frontend apps with zero config.", brand_color: "#ffffff", logo_url: "https://assets.vercel.com/image/upload/front/favicon/vercel/57x57.png", weight: 3, active: true, status: "approved", budget_remaining: 100, billing_model: "cpm", cost_per_impression: 0.006, cost_per_click: 0, reward_imp: 4, reward_click: 0 },
-  { ad_id: randomUUID(), advertiser_name: "Supabase", text: "Supabase — Open source Firebase alternative", url: "https://supabase.com", description: "Postgres, auth, and realtime. Free tier forever.", brand_color: "#3ecf8e", logo_url: "https://supabase.com/favicon/favicon-48x48.png", weight: 2, active: true, status: "approved", budget_remaining: 100, billing_model: "cpm", cost_per_impression: 0.006, cost_per_click: 0, reward_imp: 4, reward_click: 0 },
-  { ad_id: randomUUID(), advertiser_name: "Snyk", text: "Snyk — Find and fix vulnerabilities", url: "https://snyk.io", description: "Developer-first security for your dependencies.", brand_color: "#4c4a73", logo_url: "https://snyk.io/favicon-32x32.png", weight: 1, active: true, status: "approved", budget_remaining: 100, billing_model: "cpm", cost_per_impression: 0.006, cost_per_click: 0, reward_imp: 4, reward_click: 0 },
+  { ad_id: randomUUID(), advertiser_name: "Vercel", text: "Vercel - Deploy in seconds →", url: "https://vercel.com", description: "Ship frontend apps with zero config.", brand_color: "#ffffff", logo_url: "https://assets.vercel.com/image/upload/front/favicon/vercel/57x57.png", weight: 3, active: true, status: "approved", budget_remaining: 100, billing_model: "cpm", cost_per_impression: 0.006, cost_per_click: 0, reward_imp: 4, reward_click: 0 },
+  { ad_id: randomUUID(), advertiser_name: "Supabase", text: "Supabase - Open source Firebase alternative", url: "https://supabase.com", description: "Postgres, auth, and realtime. Free tier forever.", brand_color: "#3ecf8e", logo_url: "https://supabase.com/favicon/favicon-48x48.png", weight: 2, active: true, status: "approved", budget_remaining: 100, billing_model: "cpm", cost_per_impression: 0.006, cost_per_click: 0, reward_imp: 4, reward_click: 0 },
+  { ad_id: randomUUID(), advertiser_name: "Snyk", text: "Snyk - Find and fix vulnerabilities", url: "https://snyk.io", description: "Developer-first security for your dependencies.", brand_color: "#4c4a73", logo_url: "https://snyk.io/favicon-32x32.png", weight: 1, active: true, status: "approved", budget_remaining: 100, billing_model: "cpm", cost_per_impression: 0.006, cost_per_click: 0, reward_imp: 4, reward_click: 0 },
 ];
 
 let flags = { ad_serving_enabled: true };
@@ -172,7 +172,7 @@ async function githubUser(token) {
       headers: { authorization: `Bearer ${token}`, "user-agent": "CodeSlot", accept: "application/vnd.github+json" },
     });
     if (res.ok) return await res.json();
-  } catch { /* offline — fall through to stub */ }
+  } catch { /* offline - fall through to stub */ }
   return null;
 }
 
@@ -190,7 +190,7 @@ const server = http.createServer(async (req, res) => {
   }
 
   try {
-    // POST /auth — exchange a GitHub token for a session token.
+    // POST /auth - exchange a GitHub token for a session token.
     if (path === "auth" && req.method === "POST") {
       const b = await readBody(req);
       if (typeof b.github_token !== "string" || b.github_token.length < 8) {
@@ -216,7 +216,7 @@ const server = http.createServer(async (req, res) => {
     if (path === "fx-rate" && req.method === "GET") {
       return send(res, 200, { usd_inr: await getMockRate() });
     }
-    // POST /waitlist (public) — pre-launch developer email capture.
+    // POST /waitlist (public) - pre-launch developer email capture.
     if (path === "waitlist" && req.method === "POST") {
       const b = await readBody(req);
       const email = String(b.email || "").trim().toLowerCase();
@@ -227,7 +227,7 @@ const server = http.createServer(async (req, res) => {
       log(`waitlist + ${email} (${waitlist.size} total)`);
       return send(res, 200, { success: true });
     }
-    // GET /redeem-models (public) — static, price-aware catalog for local dev.
+    // GET /redeem-models (public) - static, price-aware catalog for local dev.
     if (path === "redeem-models" && req.method === "GET") {
       return send(res, 200, { models: [
         { id: "anthropic/claude-sonnet-4.5", name: "Claude Sonnet 4.5", vendor: "Anthropic", context: 200000, price_in: 3, price_out: 15 },
@@ -399,7 +399,7 @@ const server = http.createServer(async (req, res) => {
         // Fund approved campaigns from the wallet.
         if (verdict.ok && budget > 0) {
           if (walletOf(sess.advertiserId) < budget) {
-            return send(res, 402, { error: "insufficient wallet balance — add funds to launch this campaign" });
+            return send(res, 402, { error: "insufficient wallet balance - add funds to launch this campaign" });
           }
           advWallet.set(sess.advertiserId, walletOf(sess.advertiserId) - budget);
         }
@@ -451,7 +451,7 @@ const server = http.createServer(async (req, res) => {
         return send(res, 200, { success: true, refunded: refund });
       }
     }
-    // /advertiser-account — profile + delete (dev auth)
+    // /advertiser-account - profile + delete (dev auth)
     if (path === "advertiser-account") {
       const h = req.headers["authorization"] || "";
       const tok = (h.match(/^Bearer\s+(.+)$/i) || [])[1];
@@ -496,7 +496,7 @@ const server = http.createServer(async (req, res) => {
         return send(res, 200, { success: true });
       }
     }
-    // POST /payment-create — mock instantly credits the wallet (no real Stripe/Razorpay locally).
+    // POST /payment-create - mock instantly credits the wallet (no real Stripe/Razorpay locally).
     if (path === "payment-create" && req.method === "POST") {
       const h = req.headers["authorization"] || "";
       const tok = (h.match(/^Bearer\s+(.+)$/i) || [])[1];
@@ -531,7 +531,7 @@ const server = http.createServer(async (req, res) => {
       return send(res, 200, { provider: "mock", credited: true, amount_usd: amountUsd, wallet_usd: walletOf(sess.advertiserId), currency });
     }
 
-    // POST /payment-verify — mock already credited at payment-create, so this
+    // POST /payment-verify - mock already credited at payment-create, so this
     // just acknowledges (mirrors the real synchronous confirm).
     if (path === "payment-verify" && req.method === "POST") {
       const h = req.headers["authorization"] || "";

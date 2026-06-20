@@ -7,7 +7,7 @@ import { PRICING } from "@/lib/content";
 import { PlanCta } from "@/components/plan-cta";
 import { Check } from "lucide-react";
 
-export const metadata = { title: "Pricing — CodeSlot" };
+export const metadata = { title: "Pricing - CodeSlot" };
 
 export default function PricingPage() {
   return (
@@ -17,7 +17,7 @@ export default function PricingPage() {
         <section className="container py-20 text-center">
           <h1 className="text-4xl font-extrabold tracking-tight md:text-5xl">Simple, usage-based pricing</h1>
           <p className="mx-auto mt-4 max-w-2xl text-muted-foreground">
-            Pay for impressions or clicks. No platform fee to start, no minimums while in beta —
+            Pay for impressions or clicks. No platform fee to start, no minimums while in beta -
             you only pay for real, budget-backed events.
           </p>
 
@@ -50,7 +50,7 @@ export default function PricingPage() {
           </div>
 
           <p className="mx-auto mt-10 max-w-2xl text-sm text-muted-foreground">
-            Each campaign is billed <b>either</b> by impressions (CPM) <b>or</b> by clicks (CPC) — never both.
+            Each campaign is billed <b>either</b> by impressions (CPM) <b>or</b> by clicks (CPC) - never both.
             Developers earn AI credits on the billed event (~65% of impression value, ~30% of click
             value; 1 credit = $0.001). See <Link href="/how-it-works" className="text-primary underline-offset-4 hover:underline">how it works</Link>.
           </p>

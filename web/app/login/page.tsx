@@ -120,7 +120,7 @@ export default function LoginPage() {
             ) : (
               <div className="space-y-3">
                 <p className="rounded-md bg-muted p-3 text-xs text-muted-foreground">
-                  Local/dev mode — Supabase Auth isn&apos;t configured. Enter any email to sign in
+                  Local/dev mode - Supabase Auth isn&apos;t configured. Enter any email to sign in
                   against the local backend.
                 </p>
                 <div className="space-y-2">

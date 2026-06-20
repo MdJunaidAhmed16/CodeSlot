@@ -44,7 +44,7 @@ export default function UserLoginPage() {
           <CardHeader className="text-center">
             <CardTitle className="text-2xl">Developer sign in</CardTitle>
             <CardDescription>
-              View your credit balance, earnings, and redeem for AI tokens — the same
+              View your credit balance, earnings, and redeem for AI tokens - the same
               wallet as the CodeSlot extension.
             </CardDescription>
           </CardHeader>
@@ -56,7 +56,7 @@ export default function UserLoginPage() {
             ) : (
               <div className="space-y-3">
                 <p className="rounded-md bg-muted p-3 text-xs text-muted-foreground">
-                  Local/dev mode — Supabase Auth not configured. Enter any token to sign in
+                  Local/dev mode - Supabase Auth not configured. Enter any token to sign in
                   against the local backend.
                 </p>
                 <div className="space-y-2">

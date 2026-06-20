@@ -196,7 +196,7 @@ function NewCampaign({ wallet, pref, rate, onDone }: {
   }
 
   // One submit attempt. Resolves "live" | "rejected"; throws with status 402 when
-  // the ad passed moderation but the wallet can't cover the budget — the caller
+  // the ad passed moderation but the wallet can't cover the budget - the caller
   // then runs pay-to-launch. (Rejected ads never reach payment.)
   async function trySubmit(input: ReturnType<typeof buildInput>): Promise<"live" | "rejected"> {
     const r = await submitCampaign(input);
@@ -206,7 +206,7 @@ function NewCampaign({ wallet, pref, rate, onDone }: {
     return "rejected";
   }
 
-  // Charge the shortfall (≥ min top-up), confirm it synchronously, then relaunch —
+  // Charge the shortfall (≥ min top-up), confirm it synchronously, then relaunch -
   // now funded → live. Any extra paid stays in the wallet for the next campaign.
   async function payToLaunch(input: ReturnType<typeof buildInput>) {
     const rail: Currency = pref ?? "usd";
@@ -221,7 +221,7 @@ function NewCampaign({ wallet, pref, rate, onDone }: {
           await onDone();
           await trySubmit(input);
         } catch (err) {
-          setResult({ ok: false, msg: err instanceof Error ? err.message : "Payment received — refresh in a moment to launch." });
+          setResult({ ok: false, msg: err instanceof Error ? err.message : "Payment received - refresh in a moment to launch." });
         } finally {
           setBusy(false);
         }
@@ -264,7 +264,7 @@ function NewCampaign({ wallet, pref, rate, onDone }: {
       <CardContent>
         <form onSubmit={submit} className="space-y-3">
           <Field label="Advertiser / brand"><Input required maxLength={80} value={form.advertiser_name} onChange={set("advertiser_name")} placeholder="Acme CI" /></Field>
-          <Field label="Ad text (max 120 chars)"><Input required maxLength={120} value={form.text} onChange={set("text")} placeholder="Acme CI — faster builds →" /></Field>
+          <Field label="Ad text (max 120 chars)"><Input required maxLength={120} value={form.text} onChange={set("text")} placeholder="Acme CI - faster builds →" /></Field>
           <Field label="Destination URL (https)"><Input required type="url" value={form.url} onChange={set("url")} placeholder="https://acme.dev" /></Field>
           <Field label="Description (optional)"><Textarea value={form.description} onChange={set("description")} placeholder="One line shown in the tooltip." /></Field>
 
@@ -307,7 +307,7 @@ function NewCampaign({ wallet, pref, rate, onDone }: {
                 <Input value={brandColor} onChange={(e) => setBrandColor(e.target.value)} className="font-mono" />
               </div>
             )}
-            <AdPreview text={form.text || "Acme CI — faster builds →"} color={useColor ? brandColor : null} />
+            <AdPreview text={form.text || "Acme CI - faster builds →"} color={useColor ? brandColor : null} />
           </div>
 
           <div className="space-y-2">
@@ -334,7 +334,7 @@ function NewCampaign({ wallet, pref, rate, onDone }: {
           <Field label="Campaign budget ($)">
             <Input type="number" min={0} value={form.budget_remaining} onChange={set("budget_remaining")} />
             <p className="text-xs text-muted-foreground">
-              Reserved from your wallet and spent as your ad runs — it can&apos;t exceed your wallet balance
+              Reserved from your wallet and spent as your ad runs - it can&apos;t exceed your wallet balance
               ({fmt(wallet, "usd", rate)} available). At ${billing === "cpm" ? "6 CPM" : "0.30/click"}, ${form.budget_remaining || 0} buys{" "}
               {billing === "cpm"
                 ? `≈ ${Math.round(budgetUsd / RATES.cpm.costPerImpression).toLocaleString()} impressions`
@@ -622,7 +622,7 @@ function EditCampaignDialog({ c, wallet, pref, rate, onClose, onDone }: {
         await onDone();
         setTimeout(onClose, 600);
       } else {
-        setResult({ ok: false, msg: r.reason ?? "Rejected by automated review — campaign paused." });
+        setResult({ ok: false, msg: r.reason ?? "Rejected by automated review - campaign paused." });
         await onDone();
       }
     } catch (e) {

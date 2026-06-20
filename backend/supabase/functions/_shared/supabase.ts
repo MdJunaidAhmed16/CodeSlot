@@ -1,9 +1,9 @@
 // Service-role Supabase client factory. The privileged key bypasses RLS and
-// must NEVER be shipped to the client — it lives only in Edge Function env.
+// must NEVER be shipped to the client - it lives only in Edge Function env.
 //
 // Key compatibility: Supabase auto-injects the legacy SUPABASE_SERVICE_ROLE_KEY
 // into Edge Functions. Projects on the new API-key system can instead set a
-// SUPABASE_SECRET_KEY (sb_secret_...) — we accept either, preferring whatever
+// SUPABASE_SECRET_KEY (sb_secret_...) - we accept either, preferring whatever
 // is present. (The client apps use the publishable key; never the secret one.)
 import { createClient, type SupabaseClient } from "jsr:@supabase/supabase-js@2";
 

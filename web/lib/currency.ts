@@ -1,7 +1,7 @@
 "use client";
 
 // The wallet & billing are denominated in USD (the unit ads are priced in).
-// USD is what we display — it never drifts. An advertiser picks a billing
+// USD is what we display - it never drifts. An advertiser picks a billing
 // currency (USD/INR) which is the PAYMENT RAIL, locked for 30 days so checkout
 // stays consistent. INR top-ups convert at the LIVE rate at the moment of
 // payment (the real-money moment), so the platform carries no FX risk and the
@@ -26,7 +26,7 @@ export function fmt(usd: number, c: Currency, rate: number): string {
     : "$" + v.toFixed(2);
 }
 
-/** A clearly-live secondary hint, e.g. "≈ ₹4,150" — only shown to INR rails. */
+/** A clearly-live secondary hint, e.g. "≈ ₹4,150" - only shown to INR rails. */
 export const inrHint = (usd: number, rate: number) =>
   "≈ ₹" + Math.round(usd * rate).toLocaleString("en-IN");
 

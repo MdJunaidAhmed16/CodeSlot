@@ -1,7 +1,7 @@
 // CodeSlot session tokens (HS256 JWT) issued after GitHub verification.
 //
 // The token's `sub` is the internal user id. User-scoped endpoints derive the
-// identity from this verified token — never from a client-supplied field — so a
+// identity from this verified token - never from a client-supplied field - so a
 // caller cannot impersonate another user or farm credits with spoofed ids.
 import { create, getNumericDate, verify } from "https://deno.land/x/djwt@v3.0.2/mod.ts";
 

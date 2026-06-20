@@ -114,7 +114,7 @@ Deno.serve(async (req) => {
       });
       if (spendErr) return error("could not reserve budget", 500);
       if (ok !== true) {
-        return error("insufficient wallet balance — add funds to launch this campaign", 402);
+        return error("insufficient wallet balance - add funds to launch this campaign", 402);
       }
     }
 
@@ -176,7 +176,7 @@ Deno.serve(async (req) => {
     const patch: Record<string, unknown> = {};
     if (typeof body.active === "boolean") patch.active = body.active;
     if (typeof body.text === "string") {
-      if (body.text.trim().length === 0 || body.text.length > 120) return error("ad text must be 1–120 chars", 400);
+      if (body.text.trim().length === 0 || body.text.length > 120) return error("ad text must be 1-120 chars", 400);
       patch.text = body.text.trim();
     }
     if (typeof body.description === "string") patch.description = body.description.trim();

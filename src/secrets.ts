@@ -6,7 +6,7 @@ const OPENROUTER_KEY = "codeslot.openrouterApiKey";
 /**
  * Thin wrapper over VS Code SecretStorage for the user's OpenRouter API key.
  *
- * The key is stored in the OS keychain via SecretStorage — never in
+ * The key is stored in the OS keychain via SecretStorage - never in
  * globalState, settings, or plaintext on disk (see SECURITY §5).
  */
 export class Secrets {

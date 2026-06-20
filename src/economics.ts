@@ -18,8 +18,8 @@ export const PLATFORM_FEE_RATE = 0.05;
  *  live in the backend rate card (_shared/economics.ts) and are sent per ad;
  *  these are kept only for documentation. */
 export const REWARD = {
-  impression: 4, // $0.004 — ~67% of the $6 launch CPM
-  click: 90, // $0.09 — ~30% of the $0.30 CPC
+  impression: 4, // $0.004 - ~67% of the $6 launch CPM
+  click: 90, // $0.09 - ~30% of the $0.30 CPC
 } as const;
 
 export function creditsToUsd(credits: number): number {
@@ -43,7 +43,7 @@ export type DisplayCurrency = "usd" | "inr";
  * shown only as a small secondary note via {@link formatCredits}.
  *
  * Precision is adaptive: a single impression earns a fraction of a rupee/cent,
- * so amounts under one unit get extra decimals — otherwise tiny-but-real
+ * so amounts under one unit get extra decimals - otherwise tiny-but-real
  * earnings would collapse to "₹0" / "$0.00". Whole amounts stay clean.
  */
 export function formatMoney(

@@ -1,4 +1,4 @@
-// POST /payment-webhook-razorpay — Razorpay webhook (no auth; signature-verified).
+// POST /payment-webhook-razorpay - Razorpay webhook (no auth; signature-verified).
 // On `payment.captured` / `order.paid`, idempotently credits the wallet.
 import { serviceClient } from "../_shared/supabase.ts";
 import { verifyRazorpay } from "../_shared/payments.ts";

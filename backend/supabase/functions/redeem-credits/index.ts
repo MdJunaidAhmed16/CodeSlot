@@ -94,7 +94,7 @@ Deno.serve(async (req) => {
   const redemptionId = Number(row?.redemption_id);
 
   // If this redemption already had a key minted (idempotent replay), don't mint
-  // again — we can't re-show the secret, so report that.
+  // again - we can't re-show the secret, so report that.
   const { data: existing } = await db
     .from("redemptions")
     .select("openrouter_key_id")
@@ -148,7 +148,7 @@ Deno.serve(async (req) => {
       .from("redemptions")
       .update({ status: "failed" })
       .eq("id", redemptionId);
-    return error("could not provision OpenRouter key — credits refunded", 502);
+    return error("could not provision OpenRouter key - credits refunded", 502);
   }
 
   // 3. Record the key id (NOT the secret) for audit; mark completed.

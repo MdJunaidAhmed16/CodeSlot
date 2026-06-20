@@ -1,7 +1,7 @@
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 
-export const metadata = { title: "Privacy Policy — CodeSlot" };
+export const metadata = { title: "Privacy Policy - CodeSlot" };
 
 export default function PrivacyPage() {
   return (

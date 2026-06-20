@@ -13,7 +13,7 @@ export interface AuthState {
 /**
  * GitHub-based authentication for CodeSlot.
  *
- * Uses VS Code's built-in GitHub authentication provider — no custom OAuth
+ * Uses VS Code's built-in GitHub authentication provider - no custom OAuth
  * flow, webview, or client secret. The GitHub access token is exchanged at the
  * backend `/auth` endpoint for a CodeSlot session token (a signed JWT), which
  * is stored in SecretStorage and attached to user-scoped API calls.
@@ -90,7 +90,7 @@ export class AuthService implements vscode.Disposable {
         await this.signOut();
       }
     } catch {
-      // Ignore — leave current state as-is.
+      // Ignore - leave current state as-is.
     }
   }
 
@@ -107,7 +107,7 @@ export class AuthService implements vscode.Disposable {
     } catch (err) {
       this.log.warn(`CodeSlot /auth failed: ${describe(err)}`);
       void vscode.window.showErrorMessage(
-        `CodeSlot: sign-in failed — ${describe(err)}`
+        `CodeSlot: sign-in failed - ${describe(err)}`
       );
       return false;
     }

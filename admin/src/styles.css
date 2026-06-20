@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* CodeSlot owner console — dark by default. */
+/* CodeSlot owner console - dark by default. */
 @layer base {
   :root {
     --background: 240 10% 4%;
