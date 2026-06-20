@@ -21,7 +21,7 @@ export type ModerationResult =
   | { ok: true; flag?: string } // approved; `flag` = soft warning for the owner
   | { ok: false; category: string; reason: string };
 
-// ── 1. Banned category keywords ──────────────────────────────────
+// 1. Banned category keywords
 // Word-ish matching (bounded) to limit false positives on substrings.
 const CATEGORIES: Record<string, string[]> = {
   adult: [
@@ -56,7 +56,7 @@ const CATEGORIES: Record<string, string[]> = {
   ],
 };
 
-// ── 2. URL structure rules ───────────────────────────────────────
+// 2. URL structure rules
 const URL_SHORTENERS = new Set([
   "bit.ly", "tinyurl.com", "t.co", "goo.gl", "ow.ly", "is.gd", "buff.ly",
   "rebrand.ly", "cutt.ly", "shorturl.at", "rb.gy", "bl.ink", "tiny.cc",
@@ -64,7 +64,7 @@ const URL_SHORTENERS = new Set([
 // Free TLDs disproportionately abused for phishing/throwaway sites.
 const HIGH_RISK_TLDS = new Set(["tk", "ml", "ga", "cf", "gq", "work", "zip", "mov"]);
 
-// ── 3. Brand impersonation map (brand token → official registrable domains) ─
+// 3. Brand impersonation map (brand token → official registrable domains)
 const BRANDS: Record<string, string[]> = {
   paypal: ["paypal.com"],
   apple: ["apple.com", "icloud.com"],

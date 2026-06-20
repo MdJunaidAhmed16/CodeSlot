@@ -157,7 +157,7 @@ Deno.serve(async (req) => {
     });
   }
 
-  // ── Edit / pause-resume / top-up (re-moderates if content changes) ──
+  // Edit / pause-resume / top-up (re-moderates if content changes)
   if (req.method === "PATCH") {
     let body: Record<string, unknown>;
     try {
@@ -229,7 +229,7 @@ Deno.serve(async (req) => {
     return json({ campaign: data, approved: patch.status !== "rejected", reason: (patch.moderation_reason as string) ?? null });
   }
 
-  // ── Delete (refunds remaining budget to the wallet) ──
+  // Delete (refunds remaining budget to the wallet)
   if (req.method === "DELETE") {
     let body: Record<string, unknown>;
     try {

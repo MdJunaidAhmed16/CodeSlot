@@ -1,8 +1,8 @@
--- CodeSlot — idempotent migration.
+-- CodeSlot - idempotent migration.
 --
 -- Run this on an EXISTING database any time you pull schema changes. It is safe
 -- to run repeatedly. It exists because schema.sql uses `create table if not
--- exists`, which never ADDS columns to a table that already exists — so columns
+-- exists`, which never ADDS columns to a table that already exists - so columns
 -- added in later iterations must be applied with explicit ALTERs (below).
 --
 -- After running this, your functions/views are refreshed too. Nothing here
@@ -19,7 +19,7 @@ create table if not exists advertisers (
   last_seen_at timestamptz not null default now()
 );
 
--- ───────────── advertisers: columns added over time ─────────────
+-- advertisers: columns added over time
 alter table advertisers add column if not exists wallet_usd numeric not null default 0;
 alter table advertisers add column if not exists currency_pref text;
 alter table advertisers add column if not exists currency_pref_set_at timestamptz;
@@ -41,7 +41,7 @@ create table if not exists payments (
 );
 create index if not exists payments_advertiser_idx on payments(advertiser_id, created_at desc);
 
--- ───────────── ads: columns added over time ─────────────────────
+-- ads: columns added over time
 alter table ads add column if not exists advertiser_id uuid references advertisers(id) on delete cascade;
 alter table ads add column if not exists status text not null default 'approved';
 alter table ads add column if not exists moderation_reason text;
@@ -56,12 +56,12 @@ alter table ads alter column cost_per_click set default 0;
 alter table ads alter column reward_per_impression set default 4;
 alter table ads alter column reward_per_click set default 0;
 
--- ───────────── redemptions / users ──────────────────────────────
+-- redemptions / users
 alter table redemptions add column if not exists openrouter_key_id text;
 alter table users add column if not exists is_owner boolean not null default false;
 alter table users add column if not exists banned boolean not null default false;
 
--- ───────────── check constraints (guarded so re-runs are safe) ───
+-- check constraints (guarded so re-runs are safe)
 do $$
 begin
   if not exists (select 1 from pg_constraint where conname = 'advertisers_currency_pref_check') then
@@ -78,7 +78,7 @@ begin
   end if;
 end $$;
 
--- ───────────── refresh the metrics view (uses newer ad columns) ──
+-- refresh the metrics view (uses newer ad columns)
 -- Dropped + recreated (not `create or replace`) because it gained an
 -- advertiser_id column, and a view's columns can't be reordered in place.
 drop view if exists ad_metrics;
@@ -119,7 +119,7 @@ as $$
   order by g.day;
 $$;
 
--- ───────────── pre-launch developer waitlist ────────────────────
+-- pre-launch developer waitlist
 create table if not exists waitlist (
   id         bigint generated always as identity primary key,
   email      text not null unique,
@@ -127,7 +127,7 @@ create table if not exists waitlist (
   created_at timestamptz not null default now()
 );
 
--- ───────────── keep RLS locked down (idempotent) ────────────────
+-- keep RLS locked down (idempotent)
 alter table waitlist       enable row level security;
 alter table ads            enable row level security;
 alter table advertisers    enable row level security;
@@ -139,5 +139,5 @@ alter table redemptions    enable row level security;
 alter table feature_flags  enable row level security;
 
 -- NOTE: this migration syncs TABLES/COLUMNS/VIEW only. The functions/RPCs are
--- all `create or replace` in schema.sql — re-run schema.sql's function section
+-- all `create or replace` in schema.sql - re-run schema.sql's function section
 -- (or the whole file; it's safe) to refresh record_event, redeem_credits, etc.

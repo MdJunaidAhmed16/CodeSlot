@@ -58,7 +58,7 @@ Deno.serve(async (req) => {
   const totalCampaigns = (metrics ?? []).length;
   const activeCampaigns = (metrics ?? []).filter((m) => m.active).length;
 
-  // ── Treasury (real cash positions) ──────────────────────────────
+  // Treasury (real cash positions)
   // Cash collected from advertisers (held in your Stripe/Razorpay balance).
   const { data: paidRows } = await db
     .from("payments").select("amount_usd").eq("status", "paid");

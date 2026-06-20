@@ -32,7 +32,7 @@ export function amountToUsd(amountMajor: number, currency: Currency, rate = usdI
   return Math.round(usd * 100) / 100;
 }
 
-// ── Webhook signature verification (Web Crypto, constant-time compare) ──
+// Webhook signature verification (Web Crypto, constant-time compare)
 async function hmacSha256Hex(secret: string, data: string): Promise<string> {
   const key = await crypto.subtle.importKey(
     "raw",

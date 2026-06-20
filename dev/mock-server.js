@@ -21,7 +21,7 @@ const MIN_REDEEM_CREDITS = 5000;
 // the advertiser/admin view where the "+ New Campaign" button is shown).
 const DEV_OWNER = process.env.MOCK_OWNER !== "false";
 
-// ── In-memory state ───────────────────────────────────────────────
+// In-memory state
 const ADS = [
   { ad_id: randomUUID(), advertiser_name: "Vercel", text: "Vercel - Deploy in seconds →", url: "https://vercel.com", description: "Ship frontend apps with zero config.", brand_color: "#ffffff", logo_url: "https://assets.vercel.com/image/upload/front/favicon/vercel/57x57.png", weight: 3, active: true, status: "approved", budget_remaining: 100, billing_model: "cpm", cost_per_impression: 0.006, cost_per_click: 0, reward_imp: 4, reward_click: 0 },
   { ad_id: randomUUID(), advertiser_name: "Supabase", text: "Supabase - Open source Firebase alternative", url: "https://supabase.com", description: "Postgres, auth, and realtime. Free tier forever.", brand_color: "#3ecf8e", logo_url: "https://supabase.com/favicon/favicon-48x48.png", weight: 2, active: true, status: "approved", budget_remaining: 100, billing_model: "cpm", cost_per_impression: 0.006, cost_per_click: 0, reward_imp: 4, reward_click: 0 },
@@ -343,7 +343,7 @@ const server = http.createServer(async (req, res) => {
       return send(res, 200, { success: true });
     }
 
-    // ── Advertiser portal (dev auth) ─────────────────────────────
+    // Advertiser portal (dev auth)
     // POST /advertiser-auth {email} → mock advertiser session (stands in for
     // Supabase Auth Google/GitHub locally).
     if (path === "advertiser-auth" && req.method === "POST") {
@@ -541,7 +541,7 @@ const server = http.createServer(async (req, res) => {
       return send(res, 200, { success: true, wallet_usd: walletOf(sess.advertiserId), already: false });
     }
 
-    // ── Admin (auth + is_admin) ──────────────────────────────────
+    // Admin (auth + is_admin)
     if (path === "admin-metrics" && req.method === "GET") {
       const s = bearer(req);
       if (!s || !s.is_owner) return send(res, s ? 403 : 401, { error: "owner access required" });

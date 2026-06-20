@@ -1,4 +1,4 @@
--- CodeSlot — Supabase Storage setup for advertiser logos.
+-- CodeSlot - Supabase Storage setup for advertiser logos.
 -- Run once (SQL editor) alongside schema.sql.
 
 -- Public bucket for ad logos (small images; served via public URL in the slot).

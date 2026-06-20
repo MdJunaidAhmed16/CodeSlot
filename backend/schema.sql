@@ -1,8 +1,8 @@
--- CodeSlot — Postgres schema (Supabase)
+-- CodeSlot - Postgres schema (Supabase)
 -- Run this in the Supabase SQL editor or via `supabase db push`.
 --
 -- Identity model (v1.1): users authenticate with GitHub. The credit ledger is
--- keyed to an internal user id that maps 1:1 to a GitHub account id — NOT to a
+-- keyed to an internal user id that maps 1:1 to a GitHub account id - NOT to a
 -- client-supplied value. This closes the credit-farming hole that an anonymous,
 -- spoofable device id left open: earning requires a verified GitHub identity,
 -- and abusive accounts can be banned.
@@ -12,12 +12,12 @@
 --   * No anon/authenticated policies are created, so the public API keys cannot
 --     read or write these tables at all.
 --   * Edge Functions connect with the SERVICE ROLE key (bypasses RLS) and are
---     the ONLY way data is touched — every write is behind token verification,
+--     the ONLY way data is touched - every write is behind token verification,
 --     server-side validation, and rate limiting.
 
 create extension if not exists "pgcrypto";
 
--- ─────────────────────────── Advertisers ────────────────────────
+-- Advertisers
 -- Advertisers authenticate via Supabase Auth (Google / GitHub). Their identity
 -- is the Supabase auth user id; this table is our profile/role record. Kept
 -- separate from `users` (which are GitHub-keyed developers who EARN credits).
@@ -41,7 +41,7 @@ create table if not exists advertisers (
   last_seen_at  timestamptz not null default now()
 );
 
--- ─────────────────────────── Payments ───────────────────────────
+-- Payments
 -- One row per top-up attempt. Crediting happens ONLY when a signature-verified
 -- webhook flips status created → paid (idempotently). The client never credits.
 create table if not exists payments (
@@ -61,7 +61,7 @@ create table if not exists payments (
 );
 create index if not exists payments_advertiser_idx on payments(advertiser_id, created_at desc);
 
--- ───────────────────────────── Ads ──────────────────────────────
+-- Ads
 create table if not exists ads (
   id                  uuid primary key default gen_random_uuid(),
   advertiser_id       uuid references advertisers(id) on delete cascade,
@@ -94,7 +94,7 @@ create table if not exists ads (
   created_at          timestamptz not null default now()
 );
 
--- ──────────────────────────── Users ─────────────────────────────
+-- Users
 -- One row per GitHub account. `id` is the internal key used everywhere else.
 create table if not exists users (
   id            uuid primary key default gen_random_uuid(),
@@ -111,7 +111,7 @@ create table if not exists users (
   last_seen_at  timestamptz not null default now()
 );
 
--- ───────────────────── Impressions / clicks log ─────────────────
+-- Impressions / clicks log
 create table if not exists impressions (
   id          bigint generated always as identity primary key,
   user_id     uuid not null references users(id) on delete cascade,
@@ -125,7 +125,7 @@ create table if not exists impressions (
 create index if not exists impressions_user_idx on impressions(user_id, created_at desc);
 create index if not exists impressions_ad_idx on impressions(ad_id, created_at desc);
 
--- ─────────────────────────── Credit ledger ──────────────────────
+-- Credit ledger
 -- Append-only. Balance = sum(amount). Amounts are in CREDITS.
 create table if not exists credit_ledger (
   id           bigint generated always as identity primary key,
@@ -137,7 +137,7 @@ create table if not exists credit_ledger (
 );
 create index if not exists ledger_user_idx on credit_ledger(user_id);
 
--- ─────────────────────────── Redemptions ────────────────────────
+-- Redemptions
 create table if not exists redemptions (
   id               bigint generated always as identity primary key,
   user_id          uuid not null references users(id) on delete cascade,
@@ -152,7 +152,7 @@ create table if not exists redemptions (
   unique (user_id, idempotency_key)
 );
 
--- ───────────────── Feature flags / kill switch ──────────────────
+-- Feature flags / kill switch
 create table if not exists feature_flags (
   key   text primary key,
   value boolean not null default true
@@ -161,7 +161,7 @@ insert into feature_flags(key, value)
   values ('ad_serving_enabled', true)
   on conflict (key) do nothing;
 
--- ───────────────── Pre-launch developer waitlist ────────────────
+-- Pre-launch developer waitlist
 -- Public-facing email capture (inserted via the service role in the waitlist
 -- function; RLS stays deny-all so the anon key can neither read nor write).
 create table if not exists waitlist (
@@ -171,7 +171,7 @@ create table if not exists waitlist (
   created_at timestamptz not null default now()
 );
 
--- ──────────────────── Helpers ───────────────────────────────────
+-- Helpers
 create or replace function current_balance(p_user uuid)
 returns numeric language sql stable as $$
   select coalesce(sum(amount), 0) from credit_ledger where user_id = p_user;
@@ -202,7 +202,7 @@ begin
 end;
 $$;
 
--- ─────────────────── Atomic event ingestion RPC ─────────────────
+-- Atomic event ingestion RPC
 create or replace function record_event(
   p_user uuid,
   p_ad uuid,
@@ -283,7 +283,7 @@ begin
 end;
 $$;
 
--- ─────────────────── Atomic, idempotent redemption ──────────────
+-- Atomic, idempotent redemption
 create or replace function redeem_credits(
   p_user uuid,
   p_amount numeric,
@@ -332,9 +332,9 @@ returns void language sql as $$
   delete from users where id = p_user;
 $$;
 
--- ───────────── Payments: idempotent credit + wallet spend ────────
+-- Payments: idempotent credit + wallet spend
 -- Flip a payment created → paid and credit the advertiser's wallet, exactly
--- once. Safe to call repeatedly (webhook retries) — returns the new balance.
+-- once. Safe to call repeatedly (webhook retries) - returns the new balance.
 create or replace function confirm_payment(p_provider text, p_ref text)
 returns table(advertiser_id uuid, amount_usd numeric, new_balance numeric, already boolean)
 language plpgsql as $$
@@ -385,7 +385,7 @@ begin
 end;
 $$;
 
--- ─────────────────── Admin metrics view ─────────────────────────
+-- Admin metrics view
 drop view if exists ad_metrics;
 create view ad_metrics as
   select
@@ -433,7 +433,7 @@ as $$
   order by g.day;
 $$;
 
--- ─────────────────── Lock down with RLS (deny-all) ──────────────
+-- Lock down with RLS (deny-all)
 alter table ads            enable row level security;
 alter table advertisers    enable row level security;
 alter table payments       enable row level security;
