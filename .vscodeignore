@@ -25,4 +25,5 @@ package-lock.json
 *.vsix
 SECURITY.md
 DEPLOYMENT.md
+codeslot_v1.md
 **/.DS_Store
