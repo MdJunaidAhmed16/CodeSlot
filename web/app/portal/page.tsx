@@ -25,7 +25,7 @@ import {
 } from "lucide-react";
 
 const LOCK_MS = 30 * 24 * 60 * 60 * 1000;
-const MIN_TOPUP_USD = 5; // matches the backend payment-create minimum
+const MIN_TOPUP_USD = 0.5; // matches the backend payment-create minimum (gateway-safe floor)
 
 /** Small, clearly-live "≈ ₹X" hint shown to INR-rail advertisers next to USD. */
 function InrHint({ usd, pref, rate, className = "", suffix = " today" }: { usd: number; pref: Currency | null; rate: number; className?: string; suffix?: string }) {

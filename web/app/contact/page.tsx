@@ -1,15 +1,10 @@
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
-import { Mail, MapPin, Clock } from "lucide-react";
+import { Mail, Clock } from "lucide-react";
 
 export const metadata = { title: "Contact Us - CodeSlot" };
 
-// TODO: replace the placeholders below with your registered business details
-// before submitting to Razorpay (they verify a real contact + address).
-const SUPPORT_EMAIL = "mohammedjunaidah@gmail.com";
-const BUSINESS_NAME = "CodeSlot";
-const PHONE_NUMBER = "+919866581615"; // ← add your support phone number with country code
-const ADDRESS = "302, S-2, Siva Towers, Tadepalle bypass, Vijayawada"; // ← add your full registered address
+const SUPPORT_EMAIL = "scrollarapp@gmail.com";
 const HOURS = "Mon-Fri, 10:00-18:00 IST";
 
 export default function ContactPage() {
@@ -25,9 +20,6 @@ export default function ContactPage() {
         <div className="mt-10 space-y-5">
           <Row icon={<Mail className="h-5 w-5 text-primary" />} label="Email">
             <a href={`mailto:${SUPPORT_EMAIL}`} className="text-primary underline-offset-4 hover:underline">{SUPPORT_EMAIL}</a>
-          </Row>
-          <Row icon={<MapPin className="h-5 w-5 text-primary" />} label={BUSINESS_NAME}>
-            {ADDRESS}
           </Row>
           <Row icon={<Clock className="h-5 w-5 text-primary" />} label="Support hours">
             {HOURS}

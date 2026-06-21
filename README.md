@@ -60,7 +60,7 @@ know what your credits are worth (switch via `codeslot.displayCurrency`).
 
 ## Support
 
-Questions, feedback, or a problem? Email **mohammedjunaidah@gmail.com** and we'll
+Questions, feedback, or a problem? Email **scrollarapp@gmail.com** and we'll
 help you out.
 
 ---

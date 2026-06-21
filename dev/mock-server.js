@@ -519,7 +519,8 @@ const server = http.createServer(async (req, res) => {
         p.currency_pref = currency; p.set_at = Date.now(); p.fx_rate_locked = null;
       }
       const amountUsd = Math.round((currency === "inr" ? amount / rate : amount) * 100) / 100;
-      if (amountUsd < 5) return send(res, 400, { error: "minimum top-up is $5" });
+      const MIN_USD = 0.5;
+      if (amountUsd < MIN_USD) return send(res, 400, { error: `minimum top-up is ${currency === "inr" ? "₹" + Math.ceil(MIN_USD * rate) : "$" + MIN_USD}` });
       // USD prefers Stripe, but falls back to Razorpay (International) when
       // Stripe isn't configured. INR always Razorpay.
       const provider = currency === "usd" && process.env.STRIPE_SECRET_KEY ? "stripe" : "razorpay";

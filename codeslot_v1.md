@@ -451,9 +451,7 @@ service-role key are injected by Supabase.
 
 ## 16. Contact / business
 
-- Support: `mohammedjunaidah@gmail.com`
-- Phone: `+919866581615`
-- Address: `302, S-2, Siva Towers, Tadepalle bypass, Vijayawada`
+- Support: `scrollarapp@gmail.com`
 - Repo: `github.com/MdJunaidAhmed16/CodeSlot` (private)
 
 ---

@@ -33,5 +33,5 @@ source code, file contents, file paths, or any workspace data.** See
 
 ## Reporting a vulnerability
 
-Email **mohammedjunaidah@gmail.com** with details and reproduction steps.
+Email **scrollarapp@gmail.com** with details and reproduction steps.
 Please do not open a public issue for security reports.

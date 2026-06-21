@@ -14,7 +14,7 @@ import {
 } from "../_shared/payments.ts";
 import { getUsdInrRate } from "../_shared/fx.ts";
 
-const MIN_USD = 5;
+const MIN_USD = 0.5; // small gateway-safe floor; advertisers can add any amount above it
 const MAX_USD = 100000;
 
 Deno.serve(async (req) => {
@@ -68,7 +68,10 @@ Deno.serve(async (req) => {
   }
 
   const amountUsd = amountToUsd(amount, currency, fxRate);
-  if (amountUsd < MIN_USD) return error(`minimum top-up is $${MIN_USD}`, 400);
+  if (amountUsd < MIN_USD) {
+    const minDisplay = currency === "inr" ? `₹${Math.ceil(MIN_USD * fxRate)}` : `$${MIN_USD}`;
+    return error(`minimum top-up is ${minDisplay}`, 400);
+  }
   if (amountUsd > MAX_USD) return error("amount too large", 400);
 
   // Route to a processor. USD prefers Stripe, but falls back to Razorpay
