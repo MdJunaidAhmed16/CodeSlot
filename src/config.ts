@@ -8,14 +8,13 @@ import { isAcceptableBackendUrl } from "./util/validation";
  * with an https URL - this is gated for self-hosting/testing.
  */
 
-/** Default, hardcoded backend. Replace with the real deployment URL. */
+/** Default, hardcoded backend (the live Supabase Edge Functions endpoint). */
 export const DEFAULT_API_BASE_URL =
-  "https://codeslot-api.functions.supabase.co";
+  "https://dpeadjuoyokboakhekqn.functions.supabase.co";
 
 /** Marketing site (the advertiser portal lives at /login). Used by the
- *  "Advertise on CodeSlot" placeholder shown when no campaign is available.
- *  Replace with the real deployed site URL before publishing. */
-export const MARKETING_URL = "https://codeslot.dev";
+ *  "Advertise on CodeSlot" placeholder shown when no campaign is available. */
+export const MARKETING_URL = "https://code-slot.vercel.app";
 
 /** Client-side polling / timing constants (docs/06-UNIT-ECONOMICS.md §1). */
 export const TIMING = {

@@ -12,7 +12,9 @@ dev/**
 docs/**
 design-mockups/**
 scripts/**
+videos/**
 node_modules/**
+**/.env
 **/*.ts
 **/*.map
 esbuild.js
