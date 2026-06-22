@@ -25,7 +25,6 @@ import {
 } from "lucide-react";
 
 const LOCK_MS = 30 * 24 * 60 * 60 * 1000;
-const MIN_TOPUP_USD = 0.5; // matches the backend payment-create minimum (gateway-safe floor)
 
 /** Small, clearly-live "≈ ₹X" hint shown to INR-rail advertisers next to USD. */
 function InrHint({ usd, pref, rate, className = "", suffix = " today" }: { usd: number; pref: Currency | null; rate: number; className?: string; suffix?: string }) {
@@ -43,6 +42,7 @@ export default function PortalPage() {
   const [prefSetAt, setPrefSetAt] = useState<string | null>(null);
   const [rate, setRate] = useState(90);
   const [error, setError] = useState<string | null>(null);
+  const [addFundsOpen, setAddFundsOpen] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -120,8 +120,10 @@ export default function PortalPage() {
 
         <div className="grid gap-8 lg:grid-cols-[380px_1fr]">
           <div className="space-y-6">
-            <WalletPanel wallet={wallet} pref={pref} rate={rate} canChange={canChangeCurrency} onTopUp={load} />
-            <NewCampaign wallet={wallet} pref={pref} rate={rate} onDone={load} />
+            <WalletPanel wallet={wallet} pref={pref} rate={rate} canChange={canChangeCurrency} onTopUp={load}
+              open={addFundsOpen} onOpenChange={setAddFundsOpen} />
+            <NewCampaign wallet={wallet} pref={pref} rate={rate} onDone={load}
+              onAddFunds={() => setAddFundsOpen(true)} />
           </div>
           <div className="space-y-6">
             <AnalyticsPanel pref={pref} rate={rate} />
@@ -143,8 +145,8 @@ export default function PortalPage() {
   );
 }
 
-function NewCampaign({ wallet, pref, rate, onDone }: {
-  wallet: number; pref: Currency | null; rate: number; onDone: () => Promise<void>;
+function NewCampaign({ wallet, pref, rate, onDone, onAddFunds }: {
+  wallet: number; pref: Currency | null; rate: number; onDone: () => Promise<void>; onAddFunds: () => void;
 }) {
   const [form, setForm] = useState({ advertiser_name: "", text: "", url: "", description: "", budget_remaining: "6" });
   const [billing, setBilling] = useState<BillingModel>("cpm");
@@ -173,10 +175,12 @@ function NewCampaign({ wallet, pref, rate, onDone }: {
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setForm({ ...form, [k]: e.target.value });
 
-  // Budget is entered directly in USD (the wallet's unit).
+  // Budget is entered directly in USD (the wallet's unit). Campaigns are funded
+  // straight from the prepaid wallet - if it can't cover the budget, we prompt a
+  // wallet top-up instead of charging at launch.
   const budgetUsd = Number(form.budget_remaining) || 0;
-  // What the advertiser pays now if the wallet can't cover the budget (min top-up).
-  const chargeUsd = Math.max(Math.round((budgetUsd - wallet) * 100) / 100, MIN_TOPUP_USD);
+  const insufficient = budgetUsd > wallet;
+  const shortfallUsd = Math.max(Math.round((budgetUsd - wallet) * 100) / 100, 0);
 
   const buildInput = () => ({
     advertiser_name: form.advertiser_name,
@@ -195,9 +199,9 @@ function NewCampaign({ wallet, pref, rate, onDone }: {
     setLogoUrl("");
   }
 
-  // One submit attempt. Resolves "live" | "rejected"; throws with status 402 when
-  // the ad passed moderation but the wallet can't cover the budget - the caller
-  // then runs pay-to-launch. (Rejected ads never reach payment.)
+  // One submit attempt. The campaign is funded straight from the wallet on the
+  // server (atomic spend_wallet). A 402 means the wallet can't cover the budget -
+  // we surface a top-up prompt rather than charging at launch.
   async function trySubmit(input: ReturnType<typeof buildInput>): Promise<"live" | "rejected"> {
     const r = await submitCampaign(input);
     if (r.approved) { onApproved(); await onDone(); return "live"; }
@@ -206,47 +210,19 @@ function NewCampaign({ wallet, pref, rate, onDone }: {
     return "rejected";
   }
 
-  // Charge the shortfall (≥ min top-up), confirm it synchronously, then relaunch -
-  // now funded → live. Any extra paid stays in the wallet for the next campaign.
-  async function payToLaunch(input: ReturnType<typeof buildInput>) {
-    const rail: Currency = pref ?? "usd";
-    const amount = rail === "inr" ? Math.ceil(chargeUsd * rate) : chargeUsd;
-    const pr = await createPayment(amount, rail);
-    if (pr.provider === "razorpay" && pr.order_id) {
-      setResult({ ok: true, msg: "Complete the secure checkout to launch…" });
-      await openRazorpay(pr, async (resp) => {
-        setBusy(true);
-        try {
-          await verifyPayment(resp);
-          await onDone();
-          await trySubmit(input);
-        } catch (err) {
-          setResult({ ok: false, msg: err instanceof Error ? err.message : "Payment received - refresh in a moment to launch." });
-        } finally {
-          setBusy(false);
-        }
-      });
-      return;
-    }
-    if (pr.provider === "stripe" && pr.checkout_url) {
-      window.location.href = pr.checkout_url; // Stripe disabled at present
-      return;
-    }
-    // mock / instant credit
-    await onDone();
-    await trySubmit(input);
-  }
-
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    // Wallet-first: never launch when the wallet can't cover the budget - point
+    // the advertiser at Add funds instead of a checkout redirect.
+    if (insufficient) { onAddFunds(); return; }
     setBusy(true);
     setResult(null);
-    const input = buildInput();
     try {
-      await trySubmit(input);
+      await trySubmit(buildInput());
     } catch (err) {
       if ((err as { status?: number }).status === 402) {
-        await payToLaunch(input); // approved, just needs funding
+        setResult({ ok: false, msg: "Not enough wallet balance - add funds to launch this campaign." });
+        await onDone();
       } else {
         setResult({ ok: false, msg: err instanceof Error ? err.message : "Submission failed" });
       }
@@ -334,23 +310,29 @@ function NewCampaign({ wallet, pref, rate, onDone }: {
           <Field label="Campaign budget ($)">
             <Input type="number" min={0} value={form.budget_remaining} onChange={set("budget_remaining")} />
             <p className="text-xs text-muted-foreground">
-              Reserved from your wallet and spent as your ad runs - it can&apos;t exceed your wallet balance
-              ({fmt(wallet, "usd", rate)} available). At ${billing === "cpm" ? "6 CPM" : "0.30/click"}, ${form.budget_remaining || 0} buys{" "}
+              Reserved from your wallet and spent as your ad runs ({fmt(wallet, "usd", rate)} available).
+              At ${billing === "cpm" ? "6 CPM" : "0.30/click"}, ${form.budget_remaining || 0} buys{" "}
               {billing === "cpm"
                 ? `≈ ${Math.round(budgetUsd / RATES.cpm.costPerImpression).toLocaleString()} impressions`
                 : `≈ ${Math.round(budgetUsd / RATES.cpc.costPerClick).toLocaleString()} clicks`}
               {pref === "inr" && <> · <InrHint usd={budgetUsd} pref={pref} rate={rate} suffix="" /></>}.
             </p>
-            {budgetUsd > wallet && (
-              <p className="text-xs text-muted-foreground">
-                You&apos;ll pay {fmt(chargeUsd, "usd", rate)} securely at checkout to launch
-                {wallet > 0 ? ` (your ${fmt(wallet, "usd", rate)} balance is applied)` : ""}. Any extra stays in your wallet.
-              </p>
-            )}
           </Field>
-          <Button type="submit" className="w-full" disabled={busy || budgetUsd <= 0}>
-            {busy ? "Working…" : budgetUsd > wallet ? `Pay ${fmt(chargeUsd, "usd", rate)} & launch` : "Submit campaign"}
-          </Button>
+          {insufficient ? (
+            <div className="space-y-2 rounded-md border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-amber-600 dark:text-amber-400">
+              <p>
+                Your wallet has {fmt(wallet, "usd", rate)} but this campaign needs {fmt(budgetUsd, "usd", rate)}.
+                Add {fmt(shortfallUsd, "usd", rate)} to your wallet to launch.
+              </p>
+              <Button type="button" className="w-full" onClick={onAddFunds}>
+                <Plus className="h-4 w-4" /> Add funds
+              </Button>
+            </div>
+          ) : (
+            <Button type="submit" className="w-full" disabled={busy || budgetUsd <= 0}>
+              {busy ? "Working…" : "Submit campaign"}
+            </Button>
+          )}
           {result && (
             <div className={`flex items-start gap-2 rounded-md p-3 text-sm ${result.ok ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-destructive/10 text-destructive"}`}>
               {result.ok ? <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" /> : <XCircle className="mt-0.5 h-4 w-4 shrink-0" />}
@@ -405,10 +387,10 @@ function PreviewBar({ bg, defaultText, label, text, color }: { bg: string; defau
   );
 }
 
-function WalletPanel({ wallet, pref, rate, canChange, onTopUp }: {
+function WalletPanel({ wallet, pref, rate, canChange, onTopUp, open, onOpenChange }: {
   wallet: number; pref: Currency | null; rate: number; canChange: boolean; onTopUp: () => Promise<void>;
+  open: boolean; onOpenChange: (v: boolean) => void;
 }) {
-  const [open, setOpen] = useState(false);
   return (
     <Card>
       <CardHeader>
@@ -418,9 +400,9 @@ function WalletPanel({ wallet, pref, rate, canChange, onTopUp }: {
       <CardContent>
         <div className="text-3xl font-bold">{fmt(wallet, "usd", rate)}</div>
         {pref === "inr" && <div className="text-sm"><InrHint usd={wallet} pref={pref} rate={rate} /></div>}
-        <Button className="mt-4 w-full" onClick={() => setOpen(true)}><Plus className="h-4 w-4" /> Add funds</Button>
+        <Button className="mt-4 w-full" onClick={() => onOpenChange(true)}><Plus className="h-4 w-4" /> Add funds</Button>
         {open && (
-          <AddFundsDialog onClose={() => setOpen(false)} onDone={onTopUp}
+          <AddFundsDialog onClose={() => onOpenChange(false)} onDone={onTopUp}
             pref={pref} rate={rate} canChange={canChange} />
         )}
       </CardContent>
