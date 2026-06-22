@@ -308,7 +308,7 @@ function NewCampaign({ wallet, pref, rate, onDone, onAddFunds }: {
           </div>
 
           <Field label="Campaign budget ($)">
-            <Input type="number" min={0} value={form.budget_remaining} onChange={set("budget_remaining")} />
+            <Input type="number" min={0} step="0.01" value={form.budget_remaining} onChange={set("budget_remaining")} />
             <p className="text-xs text-muted-foreground">
               Reserved from your wallet and spent as your ad runs ({fmt(wallet, "usd", rate)} available).
               At ${billing === "cpm" ? "6 CPM" : "0.30/click"}, ${form.budget_remaining || 0} buys{" "}
@@ -481,7 +481,7 @@ function AddFundsDialog({ onClose, onDone, pref, rate, canChange }: {
           )}
           <div className="space-y-1.5">
             <Label>Amount ({sym})</Label>
-            <Input type="number" min={0} value={amount} onChange={(e) => setAmount(e.target.value)} />
+            <Input type="number" min={0} step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} />
             {currency === "inr" && (
               <p className="text-xs text-muted-foreground">
                 Live rate $1 = ₹{rate.toFixed(2)} · credits ≈ ${(toUsd(Number(amount) || 0, "inr", rate)).toFixed(2)} to your wallet
@@ -626,7 +626,7 @@ function EditCampaignDialog({ c, wallet, pref, rate, onClose, onDone }: {
           <Field label="Destination URL"><Input type="url" value={url} onChange={(e) => setUrl(e.target.value)} /></Field>
           <Field label="Description"><Textarea value={description} onChange={(e) => setDescription(e.target.value)} /></Field>
           <Field label="Add budget ($)">
-            <Input type="number" min={0} value={addBudget} onChange={(e) => setAddBudget(e.target.value)} />
+            <Input type="number" min={0} step="0.01" value={addBudget} onChange={(e) => setAddBudget(e.target.value)} />
             <p className="text-xs text-muted-foreground">
               Wallet: {fmt(wallet, "usd", rate)} available{" "}
               {pref === "inr" && addUsd > 0 && <>· <InrHint usd={addUsd} pref={pref} rate={rate} /></>}
