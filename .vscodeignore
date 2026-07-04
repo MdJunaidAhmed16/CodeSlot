@@ -25,6 +25,8 @@ tsconfig.json
 .editorconfig
 package-lock.json
 *.vsix
+*.zip
+extension.vsixmanifest
 SECURITY.md
 DEPLOYMENT.md
 codeslot_v1.md
