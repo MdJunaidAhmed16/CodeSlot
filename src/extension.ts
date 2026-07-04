@@ -85,6 +85,14 @@ export function activate(context: vscode.ExtensionContext): void {
       statusBar.showPaused();
       return;
     }
+    if (auth.state.waitlisted) {
+      // Signed in with GitHub but on the capacity waitlist: no ads, no earning.
+      // Auto-promoted on a later launch once a slot opens (auth.init re-checks).
+      tracker.setPaused(true);
+      fetcher.stop();
+      statusBar.showWaitlisted(auth.state.waitlistPosition);
+      return;
+    }
     if (!signedIn) {
       // Required to earn: no ads served and no tracking until signed in.
       tracker.setPaused(true);
@@ -141,6 +149,13 @@ function registerCommands(context: vscode.ExtensionContext, deps: Deps): void {
     if (ok) {
       void vscode.window.showInformationMessage(
         `CodeSlot: signed in as @${auth.state.login}. You're now earning credits.`
+      );
+    } else if (auth.state.waitlisted) {
+      const pos = auth.state.waitlistPosition;
+      void vscode.window.showInformationMessage(
+        `CodeSlot: you're on the waitlist${pos && pos > 0 ? ` (position ${pos})` : ""}. ` +
+          "We admit developers as advertiser funding grows - keep the extension " +
+          "installed and you'll be let in automatically once a slot opens."
       );
     }
   });

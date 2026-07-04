@@ -2,9 +2,14 @@
   "name": "codeslot",
   "displayName": "CodeSlot",
   "description": "Earn AI usage credits for a single, unobtrusive sponsored slot in your status bar. CodeSlot never reads your code.",
-  "version": "0.1.0",
+  "version": "0.2.1",
   "publisher": "junaidbuilds",
   "license": "SEE LICENSE IN LICENSE",
+  "homepage": "https://code-slot.vercel.app",
+  "bugs": {
+    "url": "https://code-slot.vercel.app",
+    "email": "scrollarapp@gmail.com"
+  },
   "engines": {
     "vscode": "^1.85.0"
   },
@@ -12,10 +17,10 @@
     "Other"
   ],
   "keywords": [
-    "ads",
-    "credits",
     "ai",
     "openrouter",
+    "status-bar",
+    "credits",
     "rewards"
   ],
   "icon": "media/icon.png",

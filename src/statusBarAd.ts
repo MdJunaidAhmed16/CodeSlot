@@ -3,6 +3,9 @@ import { isHexColor, isHttpsUrl } from "./util/validation";
 import { creditsToMoney, formatCredits, type DisplayCurrency } from "./economics";
 import type { Ad } from "./types";
 
+/** How long the slot stays "awake" (highlighted) after a new ad rotates in. */
+const HIGHLIGHT_MS = 2500;
+
 /**
  * Renders the single sponsored slot in the status bar plus a small balance
  * readout. Pure view layer - it holds no network logic and never touches the
@@ -15,6 +18,7 @@ export class StatusBarAd implements vscode.Disposable {
   private currency: DisplayCurrency = "usd";
   private rate = 1;
   private lastBalance: number | null = null;
+  private highlightTimer: ReturnType<typeof setTimeout> | undefined;
 
   constructor() {
     // Ad slot sits at the far right, low priority so it never crowds out
@@ -58,6 +62,10 @@ export class StatusBarAd implements vscode.Disposable {
     const tip = new vscode.MarkdownString(undefined, true);
     tip.isTrusted = false; // ad content is untrusted: no command links
     tip.supportHtml = false;
+    // Brand-colored banner (SVG data URI): the advertiser's product in white
+    // text on their brand color. All content is XML-escaped and the color is
+    // hex-validated, so untrusted ad data cannot break out of the markup.
+    tip.appendMarkdown(`${brandBanner(ad)}\n\n`);
     // Logo (https image only). Markdown image with a fixed small size.
     if (isHttpsUrl(ad.logo_url)) {
       tip.appendMarkdown(
@@ -71,6 +79,24 @@ export class StatusBarAd implements vscode.Disposable {
     tip.appendMarkdown(`$(link-external) Click to open · earns you credits`);
     this.adItem.tooltip = tip;
     this.adItem.show();
+
+    // "Wake up" the slot briefly so a freshly rotated ad catches the eye, then
+    // settle back to the calm, unobtrusive state.
+    this.flashAttention();
+  }
+
+  /** Briefly emphasize the slot on rotation, then revert. */
+  private flashAttention(): void {
+    if (this.highlightTimer) {
+      clearTimeout(this.highlightTimer);
+    }
+    this.adItem.backgroundColor = new vscode.ThemeColor(
+      "statusBarItem.warningBackground"
+    );
+    this.highlightTimer = setTimeout(() => {
+      this.adItem.backgroundColor = undefined;
+      this.highlightTimer = undefined;
+    }, HIGHLIGHT_MS);
   }
 
   /** Sets the currency earnings are shown in (and the live rate for INR). */
@@ -109,6 +135,11 @@ export class StatusBarAd implements vscode.Disposable {
    */
   showAdPlaceholder(): void {
     this.currentAd = null;
+    if (this.highlightTimer) {
+      clearTimeout(this.highlightTimer);
+      this.highlightTimer = undefined;
+    }
+    this.adItem.backgroundColor = undefined;
     this.adItem.text = "$(megaphone) Advertise on CodeSlot";
     this.adItem.color = undefined;
     this.adItem.command = "codeslot.advertise";
@@ -142,6 +173,21 @@ export class StatusBarAd implements vscode.Disposable {
     this.balanceItem.show();
   }
 
+  /** Signed in with GitHub but on the capacity waitlist (not yet earning). */
+  showWaitlisted(position?: number): void {
+    this.currentAd = null;
+    this.adItem.hide();
+    const pos = position && position > 0 ? ` #${position}` : "";
+    this.balanceItem.text = `$(clock) CodeSlot: waitlisted${pos}`;
+    this.balanceItem.tooltip =
+      "You're on the CodeSlot waitlist" +
+      (position && position > 0 ? ` (position ${position})` : "") +
+      ". We admit developers as advertiser funding grows - you'll be let in " +
+      "automatically on a later launch once a slot opens. Click to learn more.";
+    this.balanceItem.command = "codeslot.advertise";
+    this.balanceItem.show();
+  }
+
   /** Restore the default click target (wallet) after sign-in/pause changes. */
   private resetBalanceCommand(): void {
     this.balanceItem.command = "codeslot.openWallet";
@@ -158,6 +204,9 @@ export class StatusBarAd implements vscode.Disposable {
   }
 
   dispose(): void {
+    if (this.highlightTimer) {
+      clearTimeout(this.highlightTimer);
+    }
     this.adItem.dispose();
     this.balanceItem.dispose();
   }
@@ -169,4 +218,39 @@ function truncate(s: string, max: number): string {
 
 function escapeMd(s: string): string {
   return s.replace(/[\\`*_{}[\]()#+\-.!|>]/g, "\\$&");
+}
+
+/**
+ * A brand-colored banner as an inline SVG data URI: white product text on the
+ * advertiser's brand color. Security: the color is hex-validated (else a neutral
+ * default), every advertiser string is XML-escaped, and the SVG contains only
+ * shapes + text - no <script>, <foreignObject>, or external references - so
+ * untrusted ad content can neither inject markup nor fetch anything.
+ */
+function brandBanner(ad: Ad): string {
+  const color = isHexColor(ad.brand_color) ? ad.brand_color : "#24292e";
+  const name = escapeXml(truncate(ad.advertiser_name, 26));
+  const text = escapeXml(truncate(ad.text, 42));
+  const svg =
+    `<svg xmlns="http://www.w3.org/2000/svg" width="340" height="72">` +
+    `<rect width="340" height="72" rx="8" fill="${color}"/>` +
+    `<text x="16" y="30" font-family="sans-serif" font-size="12" fill="#ffffff" fill-opacity="0.8">${name}</text>` +
+    `<text x="16" y="52" font-family="sans-serif" font-size="16" font-weight="700" fill="#ffffff">${text}</text>` +
+    `</svg>`;
+  const b64 = Buffer.from(svg, "utf8").toString("base64");
+  return `![sponsored banner](data:image/svg+xml;base64,${b64})`;
+}
+
+function escapeXml(s: string): string {
+  return s.replace(/[&<>"']/g, (c) =>
+    c === "&"
+      ? "&amp;"
+      : c === "<"
+        ? "&lt;"
+        : c === ">"
+          ? "&gt;"
+          : c === '"'
+            ? "&quot;"
+            : "&apos;"
+  );
 }

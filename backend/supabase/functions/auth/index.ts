@@ -7,6 +7,7 @@
 import { error, handleOptions, json, readJson } from "../_shared/http.ts";
 import { serviceClient } from "../_shared/supabase.ts";
 import { issueToken } from "../_shared/auth.ts";
+import { FREE_SLOTS, USD_PER_SLOT } from "../_shared/capacity.ts";
 
 // Cheap anti-sybil filter: reject brand-new GitHub accounts.
 const MIN_ACCOUNT_AGE_DAYS = 7;
@@ -84,10 +85,14 @@ Deno.serve(async (req) => {
   const owner = isOwnerAccount(gh.id, gh.login);
 
   const db = serviceClient();
-  const { data, error: dbErr } = await db.rpc("upsert_github_user", {
+  // Capacity-gated admission: new devs are only admitted while we have funding
+  // (free slots + advertiser budget) to cover them; otherwise they're waitlisted.
+  const { data, error: dbErr } = await db.rpc("admit_user", {
     p_github_id: gh.id,
     p_login: gh.login,
     p_owner: owner,
+    p_free_slots: FREE_SLOTS,
+    p_usd_per_slot: USD_PER_SLOT,
   });
   if (dbErr) {
     return error("could not create session", 500);
@@ -95,6 +100,16 @@ Deno.serve(async (req) => {
   const row = Array.isArray(data) ? data[0] : data;
   if (row?.banned) {
     return error("account suspended", 403);
+  }
+
+  // Waitlisted: no earning token is issued. The extension shows a waitlist
+  // panel and re-checks on its next sign-in (auto-promoted when a slot opens).
+  if (row?.status === "waitlisted") {
+    return json({
+      status: "waitlisted",
+      position: Number(row.wait_position) || 0,
+      user: { login: gh.login },
+    });
   }
 
   const userId = String(row.id);
@@ -111,6 +126,7 @@ Deno.serve(async (req) => {
   const { data: bal } = await db.rpc("current_balance", { p_user: userId });
 
   return json({
+    status: "active",
     token,
     user: {
       id: userId,

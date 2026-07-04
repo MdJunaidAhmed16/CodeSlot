@@ -127,6 +127,21 @@ create table if not exists waitlist (
   created_at timestamptz not null default now()
 );
 
+-- Capacity-gated dev admission (waitlist) + house/affiliate ads ---------------
+-- House ads are platform-funded promos (Vercel, Supabase, ...) that fill the
+-- free base slots; they are EXCLUDED from the advertiser-funding sum that drives
+-- capacity. Their budget_remaining is the hard subsidy cap (stop serving at 0).
+alter table ads add column if not exists is_house boolean not null default false;
+
+-- A developer is 'active' (earning) or 'waitlisted' (signed in, not yet admitted).
+-- Existing rows take the 'active' default, so everyone already using CodeSlot is
+-- grandfathered in and nobody gets kicked out by this migration.
+alter table users add column if not exists status text not null default 'active'
+  check (status in ('active','waitlisted'));
+alter table users add column if not exists waitlisted_at timestamptz;
+alter table users add column if not exists admitted_at  timestamptz;
+create index if not exists users_status_idx on users(status, waitlisted_at);
+
 -- keep RLS locked down (idempotent)
 alter table waitlist       enable row level security;
 alter table ads            enable row level security;

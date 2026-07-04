@@ -202,6 +202,65 @@ begin
 end;
 $$;
 
+-- Capacity-gated sign-in. Upserts the GitHub user, then admits them as 'active'
+-- only while active developers < capacity, where
+--   capacity = p_free_slots + floor(advertiser_funding / p_usd_per_slot)
+--   advertiser_funding = Σ budget_remaining of PAYING (non-house) campaigns.
+-- New users start 'waitlisted'; existing users keep their status (so everyone
+-- already active stays active). Owners/admins are never gated. Re-running this
+-- on a later sign-in promotes a waitlisted user once a slot opens (Phase-1
+-- "status flips silently"). Returns the final status + 1-based queue position.
+create or replace function admit_user(
+  p_github_id bigint, p_login text, p_owner boolean default false,
+  p_free_slots int default 10, p_usd_per_slot numeric default 1
+)
+returns table(id uuid, is_owner boolean, is_admin boolean, banned boolean, status text, wait_position int)
+language plpgsql as $$
+declare
+  v_id uuid; v_owner boolean; v_admin boolean; v_banned boolean; v_status text;
+  v_wl_at timestamptz; v_funding numeric; v_capacity int; v_active int; v_pos int;
+begin
+  insert into users(github_id, github_login, is_owner, is_admin, status, waitlisted_at)
+    values (p_github_id, p_login, p_owner, p_owner, 'waitlisted', now())
+    on conflict (github_id) do update set
+      github_login = excluded.github_login,
+      last_seen_at = now(),
+      is_owner = users.is_owner or p_owner,
+      is_admin = users.is_admin or p_owner
+    returning users.id, users.is_owner, users.is_admin, users.banned, users.status, users.waitlisted_at
+    into v_id, v_owner, v_admin, v_banned, v_status, v_wl_at;
+
+  -- Owners/admins bypass the gate entirely. (Table columns are qualified so
+  -- they don't clash with this function's OUT columns id/status/...)
+  if (v_owner or v_admin) and v_status <> 'active' then
+    update users set status = 'active', admitted_at = coalesce(users.admitted_at, now())
+      where users.id = v_id;
+    v_status := 'active';
+  end if;
+
+  -- Try to admit within current capacity.
+  if v_status <> 'active' then
+    select coalesce(sum(budget_remaining), 0) into v_funding
+      from ads where ads.is_house = false and ads.active = true and ads.status = 'approved';
+    v_capacity := p_free_slots + floor(v_funding / nullif(p_usd_per_slot, 0))::int;
+    select count(*) into v_active from users where users.status = 'active';
+    if v_active < v_capacity then
+      update users set status = 'active', admitted_at = now() where users.id = v_id;
+      v_status := 'active';
+    end if;
+  end if;
+
+  if v_status = 'waitlisted' then
+    select count(*) + 1 into v_pos
+      from users where users.status = 'waitlisted' and users.waitlisted_at < v_wl_at;
+  else
+    v_pos := 0;
+  end if;
+
+  return query select v_id, v_owner, v_admin, v_banned, v_status, v_pos;
+end;
+$$;
+
 -- Atomic event ingestion RPC
 create or replace function record_event(
   p_user uuid,

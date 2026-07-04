@@ -3,11 +3,18 @@ import { ApiClient } from "./api/client";
 
 const SESSION_TOKEN_KEY = "codeslot.sessionToken";
 const USER_LOGIN_KEY = "codeslot.userLogin";
+const WAITLISTED_KEY = "codeslot.waitlisted";
+const WAITLIST_POS_KEY = "codeslot.waitlistPosition";
 const GITHUB_SCOPES = ["read:user"];
 
 export interface AuthState {
+  /** Admitted and earning (has a CodeSlot session token). */
   signedIn: boolean;
+  /** GitHub auth succeeded but the developer is on the capacity waitlist. */
+  waitlisted: boolean;
   login?: string;
+  /** 1-based queue position while waitlisted. */
+  waitlistPosition?: number;
 }
 
 /**
@@ -26,6 +33,8 @@ export class AuthService implements vscode.Disposable {
   readonly onDidChange = this.emitter.event;
 
   private signedIn = false;
+  private waitlisted = false;
+  private waitlistPosition: number | undefined;
   private login: string | undefined;
   private readonly disposables: vscode.Disposable[] = [];
 
@@ -45,7 +54,12 @@ export class AuthService implements vscode.Disposable {
   }
 
   get state(): AuthState {
-    return { signedIn: this.signedIn, login: this.login };
+    return {
+      signedIn: this.signedIn,
+      waitlisted: this.waitlisted,
+      login: this.login,
+      waitlistPosition: this.waitlistPosition,
+    };
   }
 
   /** Restore a stored session token at startup (no network, no prompt). */
@@ -56,6 +70,16 @@ export class AuthService implements vscode.Disposable {
       this.login = this.context.globalState.get<string>(USER_LOGIN_KEY);
       this.signedIn = true;
       this.emitter.fire(this.state);
+      return;
+    }
+    // Previously waitlisted: re-check silently in case a slot has opened
+    // (Phase-1 promotion shows up on the next launch).
+    if (this.context.globalState.get<boolean>(WAITLISTED_KEY)) {
+      this.waitlisted = true;
+      this.login = this.context.globalState.get<string>(USER_LOGIN_KEY);
+      this.waitlistPosition = this.context.globalState.get<number>(WAITLIST_POS_KEY);
+      this.emitter.fire(this.state);
+      void this.refreshFromGitHub();
     }
   }
 
@@ -97,10 +121,30 @@ export class AuthService implements vscode.Disposable {
   private async exchange(githubToken: string): Promise<boolean> {
     try {
       const res = await this.api.authenticate(githubToken);
+
+      // Capacity waitlist: signed in with GitHub but not yet admitted.
+      if (res.status === "waitlisted" || !res.token) {
+        await this.context.secrets.delete(SESSION_TOKEN_KEY);
+        await this.context.globalState.update(USER_LOGIN_KEY, res.user.login);
+        await this.context.globalState.update(WAITLISTED_KEY, true);
+        await this.context.globalState.update(WAITLIST_POS_KEY, res.position);
+        this.api.setToken(undefined);
+        this.signedIn = false;
+        this.waitlisted = true;
+        this.waitlistPosition = res.position;
+        this.login = res.user.login;
+        this.emitter.fire(this.state);
+        return false;
+      }
+
       await this.context.secrets.store(SESSION_TOKEN_KEY, res.token);
       await this.context.globalState.update(USER_LOGIN_KEY, res.user.login);
+      await this.context.globalState.update(WAITLISTED_KEY, false);
+      await this.context.globalState.update(WAITLIST_POS_KEY, undefined);
       this.api.setToken(res.token);
       this.signedIn = true;
+      this.waitlisted = false;
+      this.waitlistPosition = undefined;
       this.login = res.user.login;
       this.emitter.fire(this.state);
       return true;
@@ -116,8 +160,12 @@ export class AuthService implements vscode.Disposable {
   async signOut(): Promise<void> {
     await this.context.secrets.delete(SESSION_TOKEN_KEY);
     await this.context.globalState.update(USER_LOGIN_KEY, undefined);
+    await this.context.globalState.update(WAITLISTED_KEY, false);
+    await this.context.globalState.update(WAITLIST_POS_KEY, undefined);
     this.api.setToken(undefined);
     this.signedIn = false;
+    this.waitlisted = false;
+    this.waitlistPosition = undefined;
     this.login = undefined;
     this.emitter.fire(this.state);
   }

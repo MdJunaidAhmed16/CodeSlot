@@ -46,6 +46,17 @@ Deno.serve(async (req) => {
 
   const db = serviceClient();
 
+  // Defense in depth: only admitted ('active') developers earn. Waitlisted users
+  // are never issued a token, but a stale token must not slip through the gate.
+  const { data: u } = await db
+    .from("users")
+    .select("status")
+    .eq("id", userId)
+    .single();
+  if (u && u.status !== "active") {
+    return error("waitlisted", 403);
+  }
+
   // Returns a "no credit" success response (the client still opens the link).
   const noCredit = async () => {
     const { data } = await db.rpc("current_balance", { p_user: userId });

@@ -169,8 +169,13 @@ export class ApiClient {
 }
 
 export interface AuthResponse {
-  token: string;
-  user: { id: string; login: string; is_admin: boolean; balance: number };
+  /** "active" → admitted and earning; "waitlisted" → signed in, awaiting a slot. */
+  status?: "active" | "waitlisted";
+  /** 1-based queue position when waitlisted. */
+  position?: number;
+  /** Present only when active. */
+  token?: string;
+  user: { id?: string; login: string; is_admin?: boolean; balance?: number };
 }
 
 export class ApiError extends Error {

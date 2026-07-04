@@ -29,7 +29,10 @@ async function main() {
     entryPoints: ["src/extension.ts"],
     bundle: true,
     format: "cjs",
-    minify: production,
+    // Ship readable (non-minified) code: the client bundle is not sensitive and
+    // a readable bundle clears the Marketplace "suspicious content" scanner that
+    // distrusts minified extensions making network calls.
+    minify: false,
     sourcemap: !production,
     sourcesContent: false,
     platform: "node",

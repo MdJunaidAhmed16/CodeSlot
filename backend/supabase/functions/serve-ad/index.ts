@@ -5,7 +5,11 @@ import { error, handleOptions, isUuid, json } from "../_shared/http.ts";
 import { serviceClient } from "../_shared/supabase.ts";
 import { allow } from "../_shared/ratelimit.ts";
 
-const NEXT_IN_SEC = 420;
+// Ad rotation cadence (seconds). Shorter = more variety + faster reflection of
+// campaign changes, but the client floor is 60s and the per-ad impression
+// cooldown (4 min) still caps how often a single ad can earn. 120s = a fresh ad
+// every ~2 min without thrashing.
+const NEXT_IN_SEC = 120;
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return handleOptions();
