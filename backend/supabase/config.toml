@@ -22,7 +22,13 @@ verify_jwt = false
 [functions.balance]
 verify_jwt = false
 
+[functions.session]
+verify_jwt = false
+
 [functions.redeem-credits]
+verify_jwt = false
+
+[functions.redeem-models]
 verify_jwt = false
 
 [functions.delete-data]
