@@ -2,7 +2,7 @@
   "name": "codeslot",
   "displayName": "CodeSlot",
   "description": "Earn AI usage credits for a single, unobtrusive sponsored slot in your status bar. CodeSlot never reads your code.",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "publisher": "junaidbuilds",
   "license": "SEE LICENSE IN LICENSE",
   "homepage": "https://code-slot.vercel.app",

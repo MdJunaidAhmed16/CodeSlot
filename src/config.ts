@@ -24,6 +24,9 @@ export const TIMING = {
   defaultAdRefreshMs: 4 * 60_000,
   /** Minimum spacing the client enforces between impression reports per ad. */
   clientFreqCapMs: 4 * 60_000,
+  /** Session liveness poll: reflects deletion/ban (sign-out), waitlist
+   *  promotion, balance, and the kill switch within ~this interval. */
+  sessionPollMs: 60_000,
   /** Network request timeout. */
   requestTimeoutMs: 10_000,
 } as const;

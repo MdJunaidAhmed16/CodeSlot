@@ -131,6 +131,16 @@ export class ApiClient {
     });
   }
 
+  /** Lightweight liveness poll: 401 if the account was deleted/banned (the
+   *  extension signs out on that); otherwise returns status + balance + kill
+   *  switch so server-side changes reflect within one poll interval. */
+  session(): Promise<SessionResponse> {
+    return this.request<SessionResponse>("session", {
+      method: "GET",
+      auth: true,
+    });
+  }
+
   /** Public live USD→INR rate (no auth) - used to show earnings in ₹. */
   fxRate(): Promise<{ usd_inr: number }> {
     return this.request<{ usd_inr: number }>("fx-rate", { method: "GET" });
@@ -176,6 +186,12 @@ export interface AuthResponse {
   /** Present only when active. */
   token?: string;
   user: { id?: string; login: string; is_admin?: boolean; balance?: number };
+}
+
+export interface SessionResponse {
+  status: "active" | "waitlisted";
+  balance: number;
+  ad_serving_enabled: boolean;
 }
 
 export class ApiError extends Error {

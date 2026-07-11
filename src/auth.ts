@@ -100,6 +100,12 @@ export class AuthService implements vscode.Disposable {
     return this.exchange(session.accessToken);
   }
 
+  /** Public: silently re-evaluate the session (used by the periodic poll to
+   *  promote a waitlisted developer once a slot opens, no prompt). */
+  async recheck(): Promise<void> {
+    await this.refreshFromGitHub();
+  }
+
   /** Silent re-auth using an existing GitHub session, if one exists. */
   private async refreshFromGitHub(): Promise<void> {
     try {
@@ -179,5 +185,15 @@ export class AuthService implements vscode.Disposable {
 }
 
 function describe(err: unknown): string {
-  return err instanceof Error ? err.message : String(err);
+  if (!(err instanceof Error)) {
+    return String(err);
+  }
+  // undici's fetch wraps the real network error (DNS / TLS / proxy / timeout)
+  // in `cause` - surface it so "fetch failed" becomes actionable.
+  const cause = (err as { cause?: unknown }).cause;
+  if (cause instanceof Error) {
+    const code = (cause as { code?: string }).code;
+    return `${err.message} (${code ? code + ": " : ""}${cause.message})`;
+  }
+  return err.message;
 }

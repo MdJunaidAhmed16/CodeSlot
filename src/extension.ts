@@ -8,7 +8,7 @@ import { AdFetcher } from "./adFetcher";
 import { ImpressionTracker } from "./impressionTracker";
 import { WalletPanel } from "./webview/walletPanel";
 import { RedeemPanel } from "./webview/redeemPanel";
-import { isEnabled, MARKETING_URL } from "./config";
+import { isEnabled, MARKETING_URL, TIMING } from "./config";
 import { isSafeHttpUrl } from "./util/validation";
 import { creditsToMoney, formatCredits } from "./economics";
 import { resolveMoney } from "./money";
@@ -75,6 +75,13 @@ export function activate(context: vscode.ExtensionContext): void {
 
   registerCommands(context, { api, auth, secrets, statusBar, fetcher, tracker, log });
 
+  // Near-real-time reflection: a light poll re-checks the session so server-side
+  // changes show up within one interval without a restart - a deleted/banned
+  // account signs itself out, a waitlisted developer is auto-promoted once a
+  // slot opens, and the balance stays current.
+  const sessionPoll = setInterval(() => void pollSession(), TIMING.sessionPollMs);
+  context.subscriptions.push({ dispose: () => clearInterval(sessionPoll) });
+
   function applyState(): void {
     const on = isEnabled();
     const signedIn = auth.state.signedIn;
@@ -124,6 +131,32 @@ export function activate(context: vscode.ExtensionContext): void {
       }
       log.warn(`balance fetch failed: ${describe(err)}`);
       statusBar.setBalance(null);
+    }
+  }
+
+  // Periodic liveness poll (see the setInterval in activate()).
+  async function pollSession(): Promise<void> {
+    if (!isEnabled()) {
+      return; // respect the off switch: no background network when disabled
+    }
+    // Waitlisted developers hold no token, so re-check silently via GitHub -
+    // this promotes them to active the moment a slot opens.
+    if (auth.state.waitlisted) {
+      await auth.recheck();
+      return;
+    }
+    if (!auth.state.signedIn) {
+      return;
+    }
+    try {
+      const s = await api.session();
+      statusBar.setBalance(s.balance);
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 401) {
+        // Account deleted or banned server-side → sign out immediately.
+        await auth.signOut();
+      }
+      // Transient failures are ignored; the next tick retries.
     }
   }
 }
@@ -279,5 +312,15 @@ export function deactivate(): void {
 }
 
 function describe(err: unknown): string {
-  return err instanceof Error ? err.message : String(err);
+  if (!(err instanceof Error)) {
+    return String(err);
+  }
+  // undici's fetch wraps the real network error (DNS / TLS / proxy / timeout)
+  // in `cause` - surface it so "fetch failed" becomes actionable.
+  const cause = (err as { cause?: unknown }).cause;
+  if (cause instanceof Error) {
+    const code = (cause as { code?: string }).code;
+    return `${err.message} (${code ? code + ": " : ""}${cause.message})`;
+  }
+  return err.message;
 }

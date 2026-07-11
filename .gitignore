@@ -30,3 +30,12 @@ Thumbs.db
 
 # HyperFrames launch-video project (local only; contains .env + large renders)
 videos/
+
+# SQL scripts are run manually against Supabase; kept out of the repo.
+*.sql
+
+# Temp / generated / agent scratch files
+**/.temp/
+.claude/
+*.vsixmanifest
+*.zip

@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.2
+
+- **Near-real-time session sync.** The extension re-checks your session
+  periodically, so server-side changes take effect on their own: a removed or
+  suspended account signs out, waitlisted developers are admitted automatically
+  once a slot opens, and your balance stays current - no reload needed.
+- More precise network diagnostics in the log (surfaces the real cause behind a
+  failed request).
+
 ## 0.2.1
 
 - **Capacity-aware access.** Developers are admitted as advertiser funding grows.

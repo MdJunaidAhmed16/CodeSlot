@@ -46,14 +46,18 @@ Deno.serve(async (req) => {
 
   const db = serviceClient();
 
-  // Defense in depth: only admitted ('active') developers earn. Waitlisted users
-  // are never issued a token, but a stale token must not slip through the gate.
+  // Defense in depth: the token is signed & unexpired, but the account may have
+  // been deleted or banned since - treat both as 401 so the extension signs out.
+  // And only admitted ('active') developers earn (waitlisted -> 403).
   const { data: u } = await db
     .from("users")
-    .select("status")
+    .select("status, banned")
     .eq("id", userId)
-    .single();
-  if (u && u.status !== "active") {
+    .maybeSingle();
+  if (!u || u.banned) {
+    return error("session no longer valid", 401);
+  }
+  if (u.status !== "active") {
     return error("waitlisted", 403);
   }
 
