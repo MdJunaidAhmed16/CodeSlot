@@ -15,10 +15,11 @@ export default function PricingPage() {
       <SiteHeader />
       <main className="flex-1">
         <section className="container py-20 text-center">
-          <h1 className="text-4xl font-extrabold tracking-tight md:text-5xl">Simple, usage-based pricing</h1>
+          <h1 className="text-4xl font-extrabold tracking-tight md:text-5xl">Simple, prepaid pricing</h1>
           <p className="mx-auto mt-4 max-w-2xl text-muted-foreground">
-            Pay for impressions or clicks. No platform fee to start, no minimums while in beta -
-            you only pay for real, budget-backed events.
+            Every campaign runs on a prepaid budget at a flat <b>$6 CPM</b>. No subscription, no
+            lock-in, no minimum - these are just the amounts most advertisers start with, and
+            anything left over stays in your wallet or comes back to you.
           </p>
 
           <div className="mx-auto mt-14 grid max-w-5xl gap-6 md:grid-cols-3">

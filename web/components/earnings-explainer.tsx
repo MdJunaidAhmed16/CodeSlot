@@ -11,7 +11,17 @@ const REWARD_CLICK = 90; // credits per click (CPC ads)
 const MIN_REDEEM = 5000; // credits (~$5)
 const ROTATION_PER_HOUR = 15; // a fresh ad ~every 4 min
 
-const usd = (cr: number) => "$" + (cr * CREDIT_USD).toFixed(2);
+// Adaptive precision, mirroring formatMoney() in the extension (src/economics.ts).
+// A single impression earns a fraction of a cent, so a flat toFixed(2) rendered
+// the headline developer rate as "$0.00" - i.e. the home page told every visitor
+// they earn nothing. Small amounts get the decimals they need; normal ones stay
+// clean at two.
+const usd = (cr: number) => {
+  const val = cr * CREDIT_USD;
+  if (val === 0) return "$0.00";
+  if (val >= 0.01) return "$" + val.toFixed(2);
+  return "$" + val.toFixed(val >= 0.001 ? 3 : 4);
+};
 
 export function EarningsExplainer() {
   const [hours, setHours] = useState(5); // focused hours/day

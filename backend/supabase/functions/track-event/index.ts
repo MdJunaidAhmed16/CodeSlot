@@ -5,7 +5,7 @@
 // events can only ever be attributed to the authenticated GitHub-backed user.
 import { error, handleOptions, isUuid, json, readJson } from "../_shared/http.ts";
 import { serviceClient } from "../_shared/supabase.ts";
-import { allow, firstWithin } from "../_shared/ratelimit.ts";
+import { checkFirstWithin, checkLimit } from "../_shared/ratelimit.ts";
 import { verifyRequest } from "../_shared/auth.ts";
 
 const IMPRESSION_COOLDOWN_SEC = 240; // max 1 credited impression / ad / 4 min
@@ -39,8 +39,15 @@ Deno.serve(async (req) => {
     return error("invalid event_type", 400);
   }
 
-  // Global hourly throttle per user.
-  if (!(await allow(`rl:evt:${userId}`, HOURLY_EVENT_LIMIT, 3600))) {
+  // Every limiter on this function degrades CLOSED: crediting is the one path
+  // that mints a real liability, and the anti-fraud caps below exist nowhere
+  // else. If the counter store is down we refuse to credit rather than open a
+  // farming window. 503 (not 429) so the cause is obvious in the logs.
+  const evtLimit = await checkLimit(`rl:evt:${userId}`, HOURLY_EVENT_LIMIT, 3600);
+  if (evtLimit === "unavailable") {
+    return error("crediting temporarily unavailable", 503);
+  }
+  if (evtLimit === "limited") {
     return error("rate limited", 429);
   }
 
@@ -69,7 +76,11 @@ Deno.serve(async (req) => {
 
   if (eventType === "impression") {
     // One credited impression per ad per 4 minutes.
-    if (!(await firstWithin(`freq:${userId}:${adId}`, IMPRESSION_COOLDOWN_SEC))) {
+    const freq = await checkFirstWithin(`freq:${userId}:${adId}`, IMPRESSION_COOLDOWN_SEC);
+    if (freq === "unavailable") {
+      return error("crediting temporarily unavailable", 503);
+    }
+    if (freq === "limited") {
       return noCredit();
     }
   } else {
@@ -78,10 +89,18 @@ Deno.serve(async (req) => {
     //  2. a daily cap on total credited clicks per user (blocks many-ad farming).
     // (record_event additionally requires a recent impression of the ad, so you
     //  can't earn a click on an ad you never actually viewed.)
-    if (!(await firstWithin(`clickcap:${userId}:${adId}`, CLICK_COOLDOWN_SEC))) {
+    const perAd = await checkFirstWithin(`clickcap:${userId}:${adId}`, CLICK_COOLDOWN_SEC);
+    if (perAd === "unavailable") {
+      return error("crediting temporarily unavailable", 503);
+    }
+    if (perAd === "limited") {
       return noCredit();
     }
-    if (!(await allow(`clickday:${userId}`, DAILY_CLICK_CREDIT_CAP, 86_400))) {
+    const daily = await checkLimit(`clickday:${userId}`, DAILY_CLICK_CREDIT_CAP, 86_400);
+    if (daily === "unavailable") {
+      return error("crediting temporarily unavailable", 503);
+    }
+    if (daily === "limited") {
       return noCredit();
     }
   }

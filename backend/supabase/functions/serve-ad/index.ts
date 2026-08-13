@@ -3,7 +3,7 @@
 // frequency cap and the global kill switch. Never returns workspace data.
 import { error, handleOptions, isUuid, json } from "../_shared/http.ts";
 import { serviceClient } from "../_shared/supabase.ts";
-import { allow } from "../_shared/ratelimit.ts";
+import { checkLimit } from "../_shared/ratelimit.ts";
 
 // Ad rotation cadence (seconds). Shorter = more variety + faster reflection of
 // campaign changes, but the client floor is 60s and the per-ad impression
@@ -18,8 +18,10 @@ Deno.serve(async (req) => {
   const deviceId = new URL(req.url).searchParams.get("device_id");
   if (!isUuid(deviceId)) return error("invalid device_id", 400);
 
-  // Light per-device limit to blunt scraping of the ad pool.
-  if (!(await allow(`rl:serve:${deviceId}`, 30, 60))) {
+  // Light per-device limit to blunt scraping of the ad pool. This path degrades
+  // OPEN: no money moves here and the ad pool is public content, so a limiter
+  // outage must not stop every developer's slot from filling.
+  if ((await checkLimit(`rl:serve:${deviceId}`, 30, 60)) === "limited") {
     return error("rate limited", 429);
   }
 

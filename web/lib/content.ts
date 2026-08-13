@@ -11,30 +11,49 @@ export const PRICING: {
   highlight: boolean;
   cta: { label: string; kind: PlanCtaKind };
 }[] = [
+  // Prepaid budget packs, not subscriptions - the wallet is genuinely prepaid
+  // and spends per verified event, so these are suggested starting amounts and
+  // the portal still accepts any custom figure. Impression counts are the pack
+  // divided by the $6 CPM rate ($0.006 / impression).
   {
-    name: "Status Bar",
-    price: "$6",
-    unit: "CPM",
-    blurb: "Your sponsored message in the VS Code status bar - seen while developers actively code.",
-    features: ["1,000 impressions", "~0.5-1% CTR", "Brand color + logo", "Self-serve, auto-approved"],
-    highlight: true,
-    cta: { label: "Start a campaign", kind: "portal" },
-  },
-  {
-    name: "Click (CPC)",
-    price: "$0.30",
-    unit: "per click",
-    blurb: "Pay only when an engaged developer clicks through - impressions are free.",
-    features: ["Pay per click (impressions free)", "Dev-audience traffic", "Real-time metrics", "Cancel anytime"],
+    name: "Starter",
+    price: "$25",
+    unit: "prepaid budget",
+    blurb: "Enough reach to see real numbers before committing anything larger.",
+    features: [
+      "~4,100 impressions at $6 CPM",
+      "Brand color + logo in the slot",
+      "Self-serve, auto-screened in seconds",
+      "Unused budget refunds to your wallet",
+    ],
     highlight: false,
     cta: { label: "Start a campaign", kind: "portal" },
   },
   {
-    name: "Sponsored",
-    price: "Custom",
-    unit: "flat / mo",
-    blurb: "Guaranteed rotation share and premium placements for sustained campaigns.",
-    features: ["Guaranteed share of voice", "Priority placement", "Dedicated support", "Invoiced billing"],
+    name: "Growth",
+    price: "$75",
+    unit: "prepaid budget",
+    blurb: "A sustained presence in the rotation - the usual choice for a first real test.",
+    features: [
+      "12,500 impressions at $6 CPM",
+      "Everything in Starter",
+      "Daily impression / click / spend charts",
+      "Pause, edit or top up at any time",
+    ],
+    highlight: true,
+    cta: { label: "Start a campaign", kind: "portal" },
+  },
+  {
+    name: "Scale",
+    price: "$200+",
+    unit: "prepaid budget",
+    blurb: "For a continuous campaign across the whole developer base.",
+    features: [
+      "~33,000 impressions at $6 CPM",
+      "Everything in Growth",
+      "Multiple concurrent campaigns",
+      "Direct support from the founder",
+    ],
     highlight: false,
     cta: { label: "Contact sales", kind: "contact" },
   },

@@ -13,7 +13,7 @@
 //   * The minted user key is returned exactly once and stored only as a hash.
 import { error, handleOptions, isUuid, json, readJson } from "../_shared/http.ts";
 import { serviceClient } from "../_shared/supabase.ts";
-import { allow } from "../_shared/ratelimit.ts";
+import { checkLimit } from "../_shared/ratelimit.ts";
 import { verifyRequest } from "../_shared/auth.ts";
 import {
   creditsToUsd,
@@ -57,8 +57,13 @@ Deno.serve(async (req) => {
   }
   const amount = rawAmount;
 
-  // Throttle redemption attempts hard.
-  if (!(await allow(`rl:redeem:${userId}`, 5, 3600))) {
+  // Throttle redemption attempts hard. Degrades CLOSED - this path pays real
+  // money out to OpenRouter, so no limiter means no redemption.
+  const rl = await checkLimit(`rl:redeem:${userId}`, 5, 3600);
+  if (rl === "unavailable") {
+    return error("redemption temporarily unavailable", 503);
+  }
+  if (rl === "limited") {
     return error("rate limited", 429);
   }
 
