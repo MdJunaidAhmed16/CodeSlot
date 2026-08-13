@@ -61,7 +61,9 @@ Deno.serve(async (req) => {
   // money out to OpenRouter, so no limiter means no redemption.
   const rl = await checkLimit(`rl:redeem:${userId}`, 5, 3600);
   if (rl === "unavailable") {
-    return error("redemption temporarily unavailable", 503);
+    // Distinct from the "not configured" 503 below - these have very different
+    // fixes (retry vs set a missing secret), so they must not read the same.
+    return error("redemption temporarily unavailable, please retry shortly", 503);
   }
   if (rl === "limited") {
     return error("rate limited", 429);
@@ -69,7 +71,10 @@ Deno.serve(async (req) => {
 
   const provisioningKey = Deno.env.get("OPENROUTER_PROVISIONING_KEY");
   if (!provisioningKey) {
-    return error("redemption temporarily unavailable", 503);
+    console.error(
+      "redeem-credits: OPENROUTER_PROVISIONING_KEY is not set on this function"
+    );
+    return error("redemption is not configured on this server", 503);
   }
 
   // Convert credits → USD, then apply the platform fee for the OpenRouter limit.
