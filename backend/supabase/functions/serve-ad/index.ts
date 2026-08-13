@@ -45,7 +45,7 @@ Deno.serve(async (req) => {
   const { data: ads, error: dbErr } = await db
     .from("ads")
     .select(
-      "id, advertiser_name, text, url, description, brand_color, logo_url, weight, budget_remaining"
+      "id, advertiser_name, text, url, description, brand_color, logo_url, weight, budget_remaining, reward_per_click"
     )
     .eq("active", true)
     .eq("status", "approved") // never serve a rejected/pending campaign
@@ -70,6 +70,11 @@ Deno.serve(async (req) => {
       brand_color: picked.brand_color ?? undefined,
       logo_url: picked.logo_url ?? undefined,
       weight: picked.weight,
+      // Whether a click on THIS ad actually pays the developer. A campaign is
+      // billed either by impression (CPM) or by click (CPC), never both, so on
+      // a CPM ad a click earns nothing - there is no advertiser revenue behind
+      // it. The slot uses this to avoid promising credits it cannot deliver.
+      rewards_click: Number(picked.reward_per_click) > 0,
     },
     next_in_seconds: NEXT_IN_SEC,
   });
@@ -85,6 +90,7 @@ interface AdRow {
   logo_url: string | null;
   weight: number;
   budget_remaining: number;
+  reward_per_click: number | null;
 }
 
 function weightedPick(ads: AdRow[]): AdRow {

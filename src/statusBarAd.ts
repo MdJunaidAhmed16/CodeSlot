@@ -76,7 +76,14 @@ export class StatusBarAd implements vscode.Disposable {
     if (ad.description) {
       tip.appendMarkdown(`${escapeMd(ad.description)}\n\n`);
     }
-    tip.appendMarkdown(`$(link-external) Click to open · earns you credits`);
+    // Only promise credits when a click on THIS campaign actually pays. On a
+    // CPM ad the advertiser is billed per impression and a click earns nothing,
+    // so claiming otherwise would read as the product cheating the developer.
+    tip.appendMarkdown(
+      ad.rewards_click
+        ? `$(link-external) Click to open · earns you credits`
+        : `$(link-external) Click to open · you're earning per view`
+    );
     this.adItem.tooltip = tip;
     this.adItem.show();
 

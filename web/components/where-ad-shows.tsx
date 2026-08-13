@@ -77,7 +77,7 @@ export function activate(ctx: vscode.ExtensionContext) {
                   <div className="text-zinc-400">Ship frontend apps with zero config.</div>
                 </div>
               </div>
-              <div className="mt-2 text-[11px] text-zinc-500">↗ Click to open · earns you credits</div>
+              <div className="mt-2 text-[11px] text-zinc-500">↗ Click to open · you&apos;re earning per view</div>
             </div>
           </div>
 

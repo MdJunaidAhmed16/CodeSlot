@@ -22,6 +22,10 @@ export interface Ad {
   /** Advertiser logo (https image URL) shown in the tooltip. */
   logo_url?: string;
   weight?: number;
+  /** True when a click on this ad actually pays the developer (a CPC campaign).
+   *  Campaigns are billed either per impression or per click, never both, so a
+   *  click on a CPM ad earns nothing - the slot must not promise otherwise. */
+  rewards_click?: boolean;
 }
 
 /** Response from GET /serve-ad. `ad` is null when serving is paused/empty. */

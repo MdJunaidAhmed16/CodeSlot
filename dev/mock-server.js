@@ -248,7 +248,7 @@ const server = http.createServer(async (req, res) => {
       if (!isUuid(id)) return send(res, 400, { error: "invalid device_id" });
       const ad = weightedPick();
       return send(res, 200, {
-        ad: { ad_id: ad.ad_id, advertiser_name: ad.advertiser_name, text: ad.text, url: ad.url, description: ad.description, brand_color: ad.brand_color, logo_url: ad.logo_url, weight: ad.weight },
+        ad: { ad_id: ad.ad_id, advertiser_name: ad.advertiser_name, text: ad.text, url: ad.url, description: ad.description, brand_color: ad.brand_color, logo_url: ad.logo_url, weight: ad.weight, rewards_click: (ad.reward_click || 0) > 0 },
         next_in_seconds: 30,
       });
     }

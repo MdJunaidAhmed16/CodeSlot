@@ -93,7 +93,9 @@ export class AdFetcher implements vscode.Disposable {
       this.log.warn(`Dropped malformed ad payload (id=${String(ad.ad_id)}).`);
       return null;
     }
-    return ad;
+    // Normalize the click-reward flag: anything non-boolean from the wire is
+    // treated as "does not reward", so the slot never over-promises.
+    return { ...ad, rewards_click: ad.rewards_click === true };
   }
 
   private emit(ad: Ad | null): void {

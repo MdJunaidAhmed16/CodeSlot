@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.3
+
+- **Honest click messaging.** The slot only says a click earns you credits when
+  that campaign actually pays per click. Campaigns are billed either per view or
+  per click, never both, so on a per-view campaign a click earns nothing - the
+  tooltip now says you're earning per view instead of promising credits that
+  cannot arrive.
+
 ## 0.2.2
 
 - **Near-real-time session sync.** The extension re-checks your session
