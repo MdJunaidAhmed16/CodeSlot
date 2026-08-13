@@ -3,6 +3,9 @@
 .vscode/**
 .vscode-test/**
 .github/**
+# Local agent/tooling config. Ignored by git, but vsce packages the working
+# directory rather than the index, so it needs excluding here too.
+.claude/**
 src/**
 web/**
 admin/**
