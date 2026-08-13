@@ -77,16 +77,30 @@ export default function HomePage() {
         {/* What developers earn */}
         <EarningsExplainer />
 
-        {/* Developer waitlist */}
+        {/* Developer: earning is live */}
         <section className="border-t bg-muted/30">
           <div className="container flex flex-col items-center gap-5 py-20 text-center">
             <Badge variant="secondary" className="gap-1.5"><Code2 className="h-3.5 w-3.5" /> For developers</Badge>
-            <h2 className="text-3xl font-bold">Earning opens soon - get in early</h2>
+            <h2 className="text-3xl font-bold">Earning is live - 10 slots open</h2>
             <p className="max-w-xl text-muted-foreground">
-              CodeSlot pays you AI credits for one tiny status-bar slot while you code. Join the
-              waitlist and we&apos;ll email you the moment earning goes live.
+              Install the extension, sign in with GitHub, and earn AI credits for one tiny
+              status-bar slot while you code. Developer slots open as advertisers fund campaigns,
+              so if they are all taken you join the queue and are admitted automatically the
+              moment one frees up.
             </p>
-            <WaitlistForm source="home" />
+            <Button asChild size="lg">
+              <a
+                href="https://marketplace.visualstudio.com/items?itemName=junaidbuilds.codeslot"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Install for VS Code <ArrowRight className="h-4 w-4" />
+              </a>
+            </Button>
+            <div className="flex flex-col items-center gap-2 pt-2">
+              <p className="text-xs text-muted-foreground">Or get an email when the next slot opens</p>
+              <WaitlistForm source="home" />
+            </div>
           </div>
         </section>
 
